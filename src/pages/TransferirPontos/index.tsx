@@ -38,12 +38,6 @@ const opcoesPassagens: Passagem[] = [
     valorReais: 5.40,
     custoUnitario: reaisParaPontos(5.40),
   },
-  {
-    id: 3,
-    titulo: 'Passagem Integrada',
-    valorReais: 10.70,
-    custoUnitario: reaisParaPontos(10.70),
-  },
 ];
 
 export default function TransferirPontos() {
@@ -225,7 +219,7 @@ export default function TransferirPontos() {
         </p>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-190 mx-auto">
 
         {opcoesPassagens.map((passagem) => {
           const qtd = quantidades[passagem.id];
