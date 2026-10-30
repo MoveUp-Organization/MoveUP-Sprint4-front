@@ -17,7 +17,7 @@ export default function MeuCartao() {
     nome: 'EcoViajante',
     saldo: 0,
     greenPoints: 2450,
-    numeroCartao: '**** **** **** 4827',
+    numeroCartao: '** ** ** 4827',
   });
 
   useEffect(() => {
@@ -65,15 +65,11 @@ export default function MeuCartao() {
         to="/conversao"
         className="inline-flex items-center gap-2 mb-6 text-primary font-semibold hover:text-secondary transition-colors cursor-pointer"
       >
-        <span className="text-2xl leading-none">
-          ←
-        </span>
-        Voltar
       </Link>
 
       <section className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-dark mb-1">
-          Meu Cartão
+          Minha Carteira Digital
         </h1>
 
         <p className="text-gray-500 text-base sm:text-lg">
@@ -146,7 +142,7 @@ export default function MeuCartao() {
 
         <div>
           <h2 className="text-lg font-bold text-dark mb-4">
-            Minha carteira
+            Carteira
           </h2>
 
           <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-md min-h-[280px] flex flex-col justify-between">
@@ -207,23 +203,7 @@ export default function MeuCartao() {
               </p>
             </div>
 
-            <div className="mt-6 p-4 rounded-2xl bg-purple-50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-secondary/10 text-2xl">
-                  ⭐
-                </span>
-
-                <div>
-                  <p className="text-sm text-gray-500">
-                    MovePoints disponíveis
-                  </p>
-
-                  <p className="font-bold text-dark">
-                    {dados.greenPoints.toLocaleString('pt-BR')} pts
-                  </p>
-                </div>
-              </div>
-            </div>
+            
 
           </div>
         </div>

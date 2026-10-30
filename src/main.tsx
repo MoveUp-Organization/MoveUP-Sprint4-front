@@ -15,12 +15,12 @@ import Integrantes from './pages/Integrantes/index.tsx'
 import Login from './pages/Login/index.tsx'
 import Missoes from './pages/Missoes/index.tsx'
 import Sobre from './pages/Sobre/index.tsx'
-import Voucher from './pages/Voucher/index.tsx'
+import Carteira from './pages/Carteira/index.tsx'
 import Error from './pages/Error/index.tsx'
 import MissaoDetalhe from './pages/MissaoDetalhe/index.tsx'
 import TransferirPontos from './pages/TransferirPontos/index.tsx'
 import Historico from './pages/Historico/index.tsx'
-import MeuCartao from './pages/Cartao'
+
 
 const router = createBrowserRouter([
   { path: '/cadastro', element: <Cadastro /> },
@@ -40,10 +40,10 @@ const router = createBrowserRouter([
       { path: 'missoes', element: <Missoes /> },
       { path: 'missoes/:id', element: <MissaoDetalhe /> },
       { path: 'sobre', element: <Sobre /> },
-      { path: 'voucher', element: <Voucher /> },
+      { path: 'cartao', element: <Carteira /> },
       { path: 'transferir-pontos', element: <TransferirPontos /> },
       { path: 'historico', element: <Historico /> },
-      { path: 'meu-cartao', element: <MeuCartao /> },
+      
     ],
   },
 ])
