@@ -176,14 +176,14 @@ export default function Cabecalho() {
 
           <li>
             <NavLink
-              to="/voucher"
+              to="/cartao"
               className={linkClasses}
               onClick={() => {
                 fecharMenu();
                 setPerfilAberto(false);
               }}
             >
-              Voucher
+              Carteira
             </NavLink>
           </li>
 

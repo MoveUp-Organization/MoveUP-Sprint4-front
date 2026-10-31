@@ -6,6 +6,8 @@ interface DadosCarteira {
   saldo: number;
   greenPoints: number;
   numeroCartao: string;
+  co2Evitado: number;
+  distanciaPercorrida: number;
 }
 
 export default function MeuCartao() {
@@ -17,7 +19,9 @@ export default function MeuCartao() {
     nome: 'EcoViajante',
     saldo: 0,
     greenPoints: 2450,
-    numeroCartao: '**** **** **** 4827',
+    numeroCartao: '** ** ** 4827',
+    co2Evitado: 12.5,
+    distanciaPercorrida: 42.5,
   });
 
   useEffect(() => {
@@ -47,6 +51,9 @@ export default function MeuCartao() {
           saldo: dadosSaldo.saldo ?? prev.saldo,
           greenPoints:
             dadosSaldo.greenPointsAcumulados ?? prev.greenPoints,
+          co2Evitado: dadosSaldo.co2Evitado ?? prev.co2Evitado,
+          distanciaPercorrida:
+            dadosSaldo.distanciaPercorrida ?? prev.distanciaPercorrida,
         }));
       } catch {
         console.log('Não foi possível carregar o saldo.');
@@ -65,15 +72,11 @@ export default function MeuCartao() {
         to="/conversao"
         className="inline-flex items-center gap-2 mb-6 text-primary font-semibold hover:text-secondary transition-colors cursor-pointer"
       >
-        <span className="text-2xl leading-none">
-          ←
-        </span>
-        Voltar
       </Link>
 
       <section className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-dark mb-1">
-          Meu Cartão
+          Minha Carteira Digital
         </h1>
 
         <p className="text-gray-500 text-base sm:text-lg">
@@ -146,7 +149,7 @@ export default function MeuCartao() {
 
         <div>
           <h2 className="text-lg font-bold text-dark mb-4">
-            Minha carteira
+            Carteira
           </h2>
 
           <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-md min-h-[280px] flex flex-col justify-between">
@@ -205,25 +208,64 @@ export default function MeuCartao() {
               <p className="text-sm text-gray-400 mt-2">
                 Valor disponível na carteira
               </p>
-            </div>
 
-            <div className="mt-6 p-4 rounded-2xl bg-purple-50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-11 h-11 rounded-xl bg-secondary/10 text-2xl">
-                  ⭐
-                </span>
+              
+              <section className="bg-white rounded-2xl p-6 sm:p-8 shadow-md">
+                <h2 className="text-lg font-bold text-dark mb-5">
+                  Indicadores
+                </h2>
 
-                <div>
-                  <p className="text-sm text-gray-500">
-                    MovePoints disponíveis
-                  </p>
+                <div className="space-y-5">
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-green/10 text-2xl shrink-0">
+                      🌿
+                    </span>
 
-                  <p className="font-bold text-dark">
-                    {dados.greenPoints.toLocaleString('pt-BR')} pts
-                  </p>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">
+                        CO₂ evitado
+                      </p>
+                      <p className="text-xl font-bold text-dark">
+                        {dados.co2Evitado.toFixed(1).replace('.', ',')} kg
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-cyan/10 text-2xl shrink-0">
+                      🚲
+                    </span>
+
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">
+                        Distância percorrida
+                      </p>
+                      <p className="text-xl font-bold text-dark">
+                        {dados.distanciaPercorrida.toFixed(1).replace('.', ',')} km
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-secondary/10 text-2xl shrink-0">
+                      ⭐
+                    </span>
+
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">
+                        MovePoints acumulados
+                      </p>
+                      <p className="text-xl font-bold text-dark">
+                        {dados.greenPoints.toLocaleString('pt-BR')} pts
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </section>
+
             </div>
+
+            
 
           </div>
         </div>
