@@ -1,4 +1,3 @@
-import fotoAndre from '../../img/fotoAndre.png';
 import fotoEduardo from '../../img/fotoEduardo.png';
 import fotoIsa from '../../img/fotoIsa.png';
 import fotoMih from '../../img/fotoMih.png';
@@ -10,17 +9,10 @@ import linkedinIcon from '../../img/lkd.png';
 export default function Integrantes() {
   const equipe = [
     {
-      nome: 'Andre Luiz Ramos Forastieri',
-      rm: '572203',
-      cargo: 'Desenvolvedor Front-end',
-      foto: fotoAndre,
-      github: 'https://github.com/AndreL050690',
-      linkedin: 'https://www.linkedin.com/in/andr%C3%A9-ramos-a029913b1/',
-    },
-    {
       nome: 'Eduardo Damasio Guelere',
       rm: '569960',
       cargo: 'Desenvolvedor Back-end',
+      turma: '1TDSPH',
       foto: fotoEduardo,
       github: 'https://github.com/Eduardoguelere',
       linkedin: 'https://www.linkedin.com/in/eduardo-guelere-0902753b8/',
@@ -29,6 +21,7 @@ export default function Integrantes() {
       nome: 'Isabelle Ferreira Neri Feitoza',
       rm: '573507',
       cargo: 'Analista de Dados',
+      turma: '1TDSPH',
       foto: fotoIsa,
       github: 'https://github.com/isabelleferreiraa',
       linkedin: 'https://www.linkedin.com/in/isabelle-ferreira-8844593ab',
@@ -37,6 +30,7 @@ export default function Integrantes() {
       nome: 'Milena Silva Conegin',
       rm: '568923',
       cargo: 'Desenvolvedora Back-end',
+      turma: '1TDSPH',
       foto: fotoMih,
       github: 'https://github.com/MilenaConegin',
       linkedin: 'https://www.linkedin.com/in/milena-conegin-996b22269',
@@ -45,6 +39,7 @@ export default function Integrantes() {
       nome: 'Marina Fernandes Gomes Mesquita',
       rm: '571265',
       cargo: 'Especialista em IA',
+      turma: '1TDSPH',
       foto: fotoMarina,
       github: 'https://github.com/marifernandesgm',
       linkedin: 'https://www.linkedin.com/in/marifernandesgm-58460a40a',
@@ -52,7 +47,7 @@ export default function Integrantes() {
   ];
 
   return (
-    <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-10">
+    <main className="max-w-1200px mx-auto px-4 sm:px-8 py-10">
 
       <section className="text-center mb-12">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mb-3">
@@ -64,14 +59,13 @@ export default function Integrantes() {
         </p>
       </section>
 
-      <section className="flex flex-wrap justify-center gap-8">
+        <section className="flex flex-wrap justify-center gap-8 max-w-760px mx-auto">
 
         {equipe.map((integrante, index) => (
 
           <article
             key={index}
-            className="bg-white rounded-3xl p-8 w-full max-w-[320px] text-center shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col items-center"
-          >
+            className="bg-white rounded-3xl p-8 w-full max-w-[320px] text-center shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col items-center">
 
             <div className="w-32 h-32 rounded-full overflow-hidden mb-5 border-4 border-white shadow-md bg-gray-100">
               <img
@@ -81,7 +75,11 @@ export default function Integrantes() {
               />
             </div>
 
-            <h3 className="text-xl font-bold text-dark mb-1 h-[56px] flex items-center justify-center">
+            <p className="text-blue-500 text-sm font-bold mb-1">
+              {integrante.turma}
+            </p>
+
+            <h3 className="text-xl font-bold text-dark mb-1 h-50px flex items-center justify-center">
               {integrante.nome}
             </h3>
 
