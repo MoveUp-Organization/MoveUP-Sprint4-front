@@ -151,7 +151,7 @@ MOVEUP/
 │   ├── pages/                       # Páginas da aplicação
 │   │   ├── Cadastro/
 │   │   │   └── index.tsx            # Cadastro do usuário
-│   │   ├── Cartao/
+│   │   ├── Carteira/
 │   │   │   └── index.tsx            # Cartão/Bilhete MoveUp
 │   │   ├── Contato/
 │   │   │   └── index.tsx            # Página de contato
@@ -161,8 +161,6 @@ MOVEUP/
 │   │   │   └── index.tsx            # Página de erro
 │   │   ├── FAQ/
 │   │   │   └── index.tsx            # Perguntas frequentes
-│   │   ├── Historico/
-│   │   │   └── index.tsx            # Histórico de movimentações
 │   │   ├── Home/
 │   │   │   └── index.tsx            # Página principal após login
 │   │   ├── Inicio/
@@ -177,10 +175,6 @@ MOVEUP/
 │   │   │   └── index.tsx            # Lista de missões
 │   │   ├── Sobre/
 │   │   │   └── index.tsx            # Informações sobre o MoveUp
-│   │   ├── TransferirPontos/
-│   │   │   └── index.tsx            # Transferência/conversão de pontos
-│   │   └── Voucher/
-│   │       └── index.tsx            # Vouchers e benefícios
 │   │
 │   ├── App.tsx                      # Estrutura principal da aplicação
 │   ├── globals.css                  # Estilos globais e Tailwind CSS
