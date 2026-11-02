@@ -1,11 +1,49 @@
 // MOVEUP-CONVERSAO-VERIFICADO: arquivo completo revisado em 2026-11-01
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import Botao from '../../components/Botao/Botao';
 
 interface DadosUsuario {
   nome: string;
 }
+
+const carregarDadosUsuario = (): DadosUsuario => {
+  try {
+    const cadastroSalvo = localStorage.getItem('moveupUsuario');
+
+    if (cadastroSalvo) {
+      const cadastro = JSON.parse(cadastroSalvo);
+
+      return {
+        nome: cadastro.nome || 'EcoViajante',
+      };
+    }
+  } catch (error) {
+    console.error('Erro ao recuperar dados do cadastro:', error);
+  }
+
+  return {
+    nome: 'EcoViajante',
+  };
+};
+
+const carregarSaldo = (): number => {
+  const saldoSalvo = localStorage.getItem('greenPointsSaldo');
+
+  if (saldoSalvo !== null) {
+    const saldoNumerico = Number(saldoSalvo);
+
+    if (
+      saldoSalvo.trim() !== '' &&
+      Number.isFinite(saldoNumerico) &&
+      saldoNumerico >= 0
+    ) {
+      return saldoNumerico;
+    }
+  }
+
+  return 5000;
+};
 
 type PassagemId = 1 | 2;
 
@@ -57,65 +95,31 @@ export default function Conversao() {
       quantidades: [1, 1],
     },
   });
-  const [dados, setDados] = useState<DadosUsuario>({
-    nome: 'EcoViajante',
-  });
+  const [dados] = useState<DadosUsuario>(carregarDadosUsuario);
 
-  const [saldo, setSaldo] = useState(5000);
+  const [saldo, setSaldo] = useState<number>(carregarSaldo);
 
   const quantidades = useWatch({
   control,
   name: 'quantidades',
 }) ?? [1, 1];
 
-  const [historico, setHistorico] = useState<HistoricoItem[]>([]);
-
-  useEffect(() => {
-    // Recuperar nome do usuário
-    const cadastroSalvo = localStorage.getItem('moveupUsuario');
-
-    if (cadastroSalvo) {
-      try {
-        const parsed = JSON.parse(cadastroSalvo);
-
-        setDados({
-          nome: parsed.nome || 'EcoViajante',
-        });
-      } catch (error) {
-        console.error('Erro ao recuperar dados do cadastro:', error);
-      }
-    }
-
-    // Recuperar saldo
-    const saldoSalvo = localStorage.getItem('greenPointsSaldo');
-
-    if (saldoSalvo !== null) {
-      const saldoNumerico = Number(saldoSalvo);
-
-      if (
-        saldoSalvo.trim() !== '' &&
-        Number.isFinite(saldoNumerico) &&
-        saldoNumerico >= 0
-      ) {
-        setSaldo(saldoNumerico);
-      }
-    }
-
-    // Recuperar histórico
+const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
+  try {
     const historicoSalvo = localStorage.getItem('voucherHistorico');
 
-    if (historicoSalvo) {
-      try {
-        const dadosHistorico: unknown = JSON.parse(historicoSalvo);
-
-        if (Array.isArray(dadosHistorico)) {
-          setHistorico(dadosHistorico as HistoricoItem[]);
-        }
-      } catch (error) {
-        console.error('Erro ao recuperar histórico:', error);
-      }
+    if (!historicoSalvo) {
+      return [];
     }
-  }, []);
+
+    const dados: unknown = JSON.parse(historicoSalvo);
+
+    return Array.isArray(dados) ? dados as HistoricoItem[] : [];
+  } catch (error) {
+    console.error('Erro ao recuperar histórico:', error);
+    return [];
+  }
+});
 
   const handleQuantidadeChange = (id: PassagemId, value: string) => {
     let num = parseInt(value, 10);
