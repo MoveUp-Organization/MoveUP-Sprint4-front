@@ -375,7 +375,7 @@ export default function MeuCartao() {
 
           <button
             type="button"
-            onClick={() => navigate('/transferir-pontos')}
+            onClick={() => navigate('/conversao')}
             className="shrink-0 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-dark font-bold hover:bg-gray-100 transition-colors cursor-pointer"
           >
             Converter MovePoints
