@@ -23,7 +23,26 @@ interface MissaoSemana {
 }
 
 export default function Home() {
-  const [nomeUsuario, setNomeUsuario] = useState('EcoViajante');
+  
+  const [nomeUsuario] = useState<string>(() => {
+    try {
+      const cadastroSalvo = localStorage.getItem('moveupUsuario');
+
+      if (!cadastroSalvo) {
+        return 'EcoViajante';
+      }
+
+      const cadastro = JSON.parse(cadastroSalvo);
+
+      return typeof cadastro.nome === 'string' && cadastro.nome.trim()
+        ? cadastro.nome
+        : 'EcoViajante';
+    } catch (error) {
+      console.error('Erro ao recuperar dados do cadastro:', error);
+      return 'EcoViajante';
+    }
+  });
+
   const [movePoints, setMovePoints] = useState(1450);
   const [co2Economizado, setCo2Economizado] = useState(14.8);
   const [distanciaSustentavel, setDistanciaSustentavel] = useState(42.5);
@@ -91,24 +110,9 @@ export default function Home() {
     },
   ];
 
-  useEffect(() => {
-    document.title = 'MoveUP - Mobilidade Sustentável';
-
-    // Pega o nome verdadeiro informado no cadastro
-    const cadastroSalvo = sessionStorage.getItem('moveup_cadastro');
-
-    if (cadastroSalvo) {
-      try {
-        const cadastro = JSON.parse(cadastroSalvo);
-
-        if (cadastro.nome) {
-          setNomeUsuario(cadastro.nome);
-        }
-      } catch (error) {
-        console.error('Erro ao recuperar dados do cadastro:', error);
-      }
-    }
-  }, []);
+useEffect(() => {
+  document.title = 'MoveUP - Mobilidade Sustentável';
+}, []);
 
   const concluirMissao = (id: number) => {
     setMissoesSemana((prev) =>

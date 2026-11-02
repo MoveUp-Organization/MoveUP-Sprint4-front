@@ -9,11 +9,26 @@ interface Usuario {
   senha?: string;
 }
 
+const lerUsuarioSalvo = (): Usuario | null => {
+  const usuarioSalvo = localStorage.getItem('moveupUsuario');
+  const estaLogado = localStorage.getItem('moveupLogado');
+
+  if (!usuarioSalvo || estaLogado !== 'true') {
+    return null;
+  }
+
+  try {
+    return JSON.parse(usuarioSalvo) as Usuario;
+  } catch (error) {
+    console.error('Erro ao carregar usuário:', error);
+    return null;
+  }
+};
+
 export default function Cabecalho() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [perfilAberto, setPerfilAberto] = useState(false);
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
-
+  const [usuario, setUsuario] = useState<Usuario | null>(lerUsuarioSalvo);
   const navigate = useNavigate();
 
   const toggleMenu = () => {
@@ -40,18 +55,16 @@ export default function Cabecalho() {
   };
 
   useEffect(() => {
-    carregarUsuario();
-
     const atualizarPerfil = () => {
-      carregarUsuario();
-    };
+    carregarUsuario();
+  };
 
-    window.addEventListener('loginAtualizado', atualizarPerfil);
+  window.addEventListener('loginAtualizado', atualizarPerfil);
 
-    return () => {
-      window.removeEventListener('loginAtualizado', atualizarPerfil);
-    };
-  }, []);
+  return () => {
+    window.removeEventListener('loginAtualizado', atualizarPerfil);
+  };
+}, []);
 
   const fazerLogout = () => {
     localStorage.removeItem('moveupLogado');
