@@ -138,7 +138,6 @@ MoveUP-Sprint4-front/
 │   │       └── WatsonAssistant.tsx  # Assistente virtual
 │   │
 │   ├── img/                         # Imagens utilizadas no projeto
-│   │   ├── fotoAndre.png
 │   │   ├── fotoEduardo.png
 │   │   ├── fotoIsa.png
 │   │   ├── fotoMarina.png
@@ -161,8 +160,6 @@ MoveUP-Sprint4-front/
 │   │   │   └── index.tsx            # Página de erro
 │   │   ├── FAQ/
 │   │   │   └── index.tsx            # Perguntas frequentes
-│   │   ├── Historico/
-│   │   │   └── index.tsx            # Histórico de movimentações
 │   │   ├── Home/
 │   │   │   └── index.tsx            # Página principal após login
 │   │   ├── Inicio/
