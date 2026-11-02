@@ -1,13 +1,54 @@
-
-import { useEffect, useState } from 'react';
+// MOVEUP-CONVERSAO-VERIFICADO: arquivo completo revisado em 2026-11-01
+import { useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import Botao from '../../components/Botao/Botao';
 
 interface DadosUsuario {
   nome: string;
 }
 
+const carregarDadosUsuario = (): DadosUsuario => {
+  try {
+    const cadastroSalvo = localStorage.getItem('moveupUsuario');
+
+    if (cadastroSalvo) {
+      const cadastro = JSON.parse(cadastroSalvo);
+
+      return {
+        nome: cadastro.nome || 'EcoViajante',
+      };
+    }
+  } catch (error) {
+    console.error('Erro ao recuperar dados do cadastro:', error);
+  }
+
+  return {
+    nome: 'EcoViajante',
+  };
+};
+
+const carregarSaldo = (): number => {
+  const saldoSalvo = localStorage.getItem('greenPointsSaldo');
+
+  if (saldoSalvo !== null) {
+    const saldoNumerico = Number(saldoSalvo);
+
+    if (
+      saldoSalvo.trim() !== '' &&
+      Number.isFinite(saldoNumerico) &&
+      saldoNumerico >= 0
+    ) {
+      return saldoNumerico;
+    }
+  }
+
+  return 5000;
+};
+
+type PassagemId = 1 | 2;
+
 interface Passagem {
-  id: number;
+  id: PassagemId;
   titulo: string;
   valorReais: number;
   custoUnitario: number;
@@ -44,68 +85,43 @@ const opcoesPassagens: Passagem[] = [
   },
 ];
 
+interface ConversaoFormData {
+  quantidades: number[];
+}
+
 export default function Conversao() {
-  const [dados, setDados] = useState<DadosUsuario>({
-    nome: 'EcoViajante',
+  const { control, setValue } = useForm<ConversaoFormData>({
+    defaultValues: {
+      quantidades: [1, 1],
+    },
   });
+  const [dados] = useState<DadosUsuario>(carregarDadosUsuario);
 
-  const [saldo, setSaldo] = useState(5000);
+  const [saldo, setSaldo] = useState<number>(carregarSaldo);
 
-  const [quantidades, setQuantidades] = useState<Record<number, number>>({
-    1: 1,
-    2: 1,
-  });
+  const quantidades = useWatch({
+  control,
+  name: 'quantidades',
+}) ?? [1, 1];
 
-  const [historico, setHistorico] = useState<HistoricoItem[]>([]);
-
-  useEffect(() => {
-    // Recuperar nome do usuário
-    const cadastroSalvo = localStorage.getItem('moveupUsuario');
-
-    if (cadastroSalvo) {
-      try {
-        const parsed = JSON.parse(cadastroSalvo);
-
-        setDados({
-          nome: parsed.nome || 'EcoViajante',
-        });
-      } catch (error) {
-        console.error('Erro ao recuperar dados do cadastro:', error);
-      }
-    }
-
-    // Recuperar saldo
-    const saldoSalvo = localStorage.getItem('greenPointsSaldo');
-
-    if (saldoSalvo !== null) {
-      const saldoNumerico = Number(saldoSalvo);
-
-      if (
-        saldoSalvo.trim() !== '' &&
-        Number.isFinite(saldoNumerico) &&
-        saldoNumerico >= 0
-      ) {
-        setSaldo(saldoNumerico);
-      }
-    }
-
-    // Recuperar histórico
+const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
+  try {
     const historicoSalvo = localStorage.getItem('voucherHistorico');
 
-    if (historicoSalvo) {
-      try {
-        const dadosHistorico: unknown = JSON.parse(historicoSalvo);
-
-        if (Array.isArray(dadosHistorico)) {
-          setHistorico(dadosHistorico as HistoricoItem[]);
-        }
-      } catch (error) {
-        console.error('Erro ao recuperar histórico:', error);
-      }
+    if (!historicoSalvo) {
+      return [];
     }
-  }, []);
 
-  const handleQuantidadeChange = (id: number, value: string) => {
+    const dados: unknown = JSON.parse(historicoSalvo);
+
+    return Array.isArray(dados) ? dados as HistoricoItem[] : [];
+  } catch (error) {
+    console.error('Erro ao recuperar histórico:', error);
+    return [];
+  }
+});
+
+  const handleQuantidadeChange = (id: PassagemId, value: string) => {
     let num = parseInt(value, 10);
 
     if (isNaN(num) || num < 1) {
@@ -116,14 +132,14 @@ export default function Conversao() {
       num = 50;
     }
 
-    setQuantidades((prev) => ({
-      ...prev,
-      [id]: num,
-    }));
+    setValue(`quantidades.${id - 1}` as const, num, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const handleResgatar = (passagem: Passagem) => {
-    const qtd = quantidades[passagem.id];
+    const qtd = quantidades[passagem.id - 1] ?? 1;
 
     const totalCusto = qtd * passagem.custoUnitario;
     const totalEmReais = qtd * passagem.valorReais;
@@ -179,10 +195,10 @@ export default function Conversao() {
       JSON.stringify(novoHistorico)
     );
 
-    setQuantidades((prev) => ({
-      ...prev,
-      [passagem.id]: 1,
-    }));
+    setValue(`quantidades.${passagem.id - 1}` as const, 1, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
 
     alert(
       `✓ Sucesso! Foram creditadas ${qtd} passagem(ns).
@@ -246,7 +262,7 @@ export default function Conversao() {
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[760px] mx-auto">
 
           {opcoesPassagens.map((passagem) => {
-            const qtd = quantidades[passagem.id];
+            const qtd = quantidades[passagem.id - 1] ?? 1;
             const total = qtd * passagem.custoUnitario;
             const totalReais = qtd * passagem.valorReais;
 
@@ -283,17 +299,26 @@ export default function Conversao() {
                       Quantidade:
                     </label>
 
-                    <input
-                      id={`qtd-${passagem.id}`}
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={qtd}
-                      onChange={(e) =>
-                        handleQuantidadeChange(passagem.id, e.target.value)
-                      }
-                      className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-cyan outline-none"
+
+                    <Controller
+                      control={control}
+                      name={`quantidades.${passagem.id - 1}` as const}
+                      render={({ field }) => (
+                        <input
+                          {...field}
+                          id={`qtd-${passagem.id}`}
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={field.value ?? 1}
+                          onChange={(e) =>
+                            handleQuantidadeChange(passagem.id, e.target.value)
+                          }
+                          className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-cyan outline-none"
+                        />
+                      )}
                     />
+
                   </div>
 
                   <p className="font-bold text-dark mb-2">

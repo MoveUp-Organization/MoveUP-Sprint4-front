@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../img/logo.png';
 
@@ -12,14 +12,19 @@ interface CadastroFormData {
 export default function Cadastro() {
   const navigate = useNavigate();
 
+
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CadastroFormData>();
 
-  const senhaAtual = watch('senha');
+  const senhaAtual = useWatch({
+    control,
+    name: 'senha',
+  });
+
 
   const onSubmit = (data: CadastroFormData) => {
     localStorage.setItem(
@@ -46,7 +51,7 @@ export default function Cadastro() {
           />
 
           <p className="text-[#6b6b72] text-base sm:text-lg leading-relaxed max-w-md">
-            Crie sua conta para acessar a plataforma e começar a acumular GreenPoints.
+            Crie sua conta para acessar a plataforma e começar a acumular MovePoints.
           </p>
         </div>
 
@@ -79,15 +84,25 @@ export default function Cadastro() {
                 }`}
                 {...register('nome', {
                   required: 'O nome é obrigatório.',
-                  minLength: {
-                    value: 3,
-                    message: 'O nome deve ter pelo menos 3 caracteres.',
-                  },
                   maxLength: {
                     value: 80,
                     message: 'O nome deve ter no máximo 80 caracteres.',
                   },
+                  validate: (valor) => {
+                    const nome = valor.trim().replace(/\s+/g, ' ');
+
+                    if (nome.length < 3) {
+                      return 'O nome deve ter pelo menos 3 caracteres.';
+                    }
+
+                    if (!/^[\p{L}]+(?:[ '\u2019-][\p{L}]+)*$/u.test(nome)) {
+                      return 'Digite um nome válido, sem números ou símbolos.';
+                    }
+
+                    return true;
+                  },
                 })}
+
               />
 
               {errors.nome && (
