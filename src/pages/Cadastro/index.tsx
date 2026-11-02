@@ -79,15 +79,25 @@ export default function Cadastro() {
                 }`}
                 {...register('nome', {
                   required: 'O nome é obrigatório.',
-                  minLength: {
-                    value: 3,
-                    message: 'O nome deve ter pelo menos 3 caracteres.',
-                  },
                   maxLength: {
                     value: 80,
                     message: 'O nome deve ter no máximo 80 caracteres.',
                   },
+                  validate: (valor) => {
+                    const nome = valor.trim().replace(/\s+/g, ' ');
+
+                    if (nome.length < 3) {
+                      return 'O nome deve ter pelo menos 3 caracteres.';
+                    }
+
+                    if (!/^[\p{L}]+(?:[ '\u2019-][\p{L}]+)*$/u.test(nome)) {
+                      return 'Digite um nome válido, sem números ou símbolos.';
+                    }
+
+                    return true;
+                  },
                 })}
+
               />
 
               {errors.nome && (
