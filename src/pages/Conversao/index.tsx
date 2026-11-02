@@ -385,7 +385,7 @@ const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
                     colSpan={5}
                     className="py-8 text-center text-gray-400"
                   >
-                    Nenhum voucher gerado ainda.
+                    Nenhuma conversão foi gerada ainda.
                   </td>
                 </tr>
               ) : (
