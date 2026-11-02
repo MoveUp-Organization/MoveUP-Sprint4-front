@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface DadosCarteira {
@@ -10,56 +10,53 @@ interface DadosCarteira {
   distanciaPercorrida: number;
 }
 
-export default function MeuCartao() {
-  const navigate = useNavigate();
-
-  const [saldoVisivel, setSaldoVisivel] = useState(true);
-
-  const [dados, setDados] = useState<DadosCarteira>({
+const carregarDadosCarteira = (): DadosCarteira => {
+  const dados: DadosCarteira = {
     nome: 'EcoViajante',
     saldo: 0,
     greenPoints: 2450,
     numeroCartao: '** ** ** 4827',
     co2Evitado: 12.5,
     distanciaPercorrida: 42.5,
-  });
+  };
 
-  useEffect(() => {
+  try {
     const cadastroSalvo = localStorage.getItem('moveupUsuario');
 
     if (cadastroSalvo) {
-      try {
-        const cadastro = JSON.parse(cadastroSalvo);
-
-        setDados((prev) => ({
-          ...prev,
-          nome: cadastro.nome || 'EcoViajante',
-        }));
-      } catch {
-        console.log('Não foi possível carregar os dados do cadastro.');
-      }
+      const cadastro = JSON.parse(cadastroSalvo);
+      dados.nome = cadastro.nome || dados.nome;
     }
+  } catch (error) {
+    console.error('Erro ao carregar cadastro:', error);
+  }
 
+  try {
     const saldoSalvo = sessionStorage.getItem('moveup_saldo');
 
     if (saldoSalvo) {
-      try {
-        const dadosSaldo = JSON.parse(saldoSalvo);
+      const dadosSaldo = JSON.parse(saldoSalvo);
 
-        setDados((prev) => ({
-          ...prev,
-          saldo: dadosSaldo.saldo ?? prev.saldo,
-          greenPoints:
-            dadosSaldo.greenPointsAcumulados ?? prev.greenPoints,
-          co2Evitado: dadosSaldo.co2Evitado ?? prev.co2Evitado,
-          distanciaPercorrida:
-            dadosSaldo.distanciaPercorrida ?? prev.distanciaPercorrida,
-        }));
-      } catch {
-        console.log('Não foi possível carregar o saldo.');
-      }
+      dados.saldo = dadosSaldo.saldo ?? dados.saldo;
+      dados.greenPoints =
+        dadosSaldo.greenPointsAcumulados ?? dados.greenPoints;
+      dados.co2Evitado = dadosSaldo.co2Evitado ?? dados.co2Evitado;
+      dados.distanciaPercorrida =
+        dadosSaldo.distanciaPercorrida ?? dados.distanciaPercorrida;
     }
-  }, []);
+  } catch (error) {
+    console.error('Erro ao carregar saldo:', error);
+  }
+
+  return dados;
+};
+
+export default function MeuCartao() {
+  const navigate = useNavigate();
+
+  const [saldoVisivel, setSaldoVisivel] = useState(true);
+
+  const [dados] = useState<DadosCarteira>(carregarDadosCarteira);
 
   const toggleSaldo = () => {
     setSaldoVisivel((prev) => !prev);

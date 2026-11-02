@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 interface HistoricoItem {
@@ -10,19 +10,23 @@ interface HistoricoItem {
 }
 
 export default function Historico() {
-  const [historico, setHistorico] = useState<HistoricoItem[]>([]);
 
-  useEffect(() => {
-    const historicoSalvo = localStorage.getItem(
-      'voucherHistorico'
-    );
+const [historico] = useState<HistoricoItem[]>(() => {
+  try {
+    const historicoSalvo = localStorage.getItem('voucherHistorico');
 
-    if (historicoSalvo) {
-      setHistorico(
-        JSON.parse(historicoSalvo)
-      );
+    if (!historicoSalvo) {
+      return [];
     }
-  }, []);
+
+    const dados = JSON.parse(historicoSalvo);
+
+    return Array.isArray(dados) ? dados : [];
+  } catch (error) {
+    console.error('Erro ao carregar histórico:', error);
+    return [];
+  }
+});
 
   return (
     <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-10">
