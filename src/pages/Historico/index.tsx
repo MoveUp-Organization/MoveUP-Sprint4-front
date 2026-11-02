@@ -45,7 +45,7 @@ export default function Historico() {
         </h1>
 
         <p className="text-gray-500 text-lg">
-          Confira o histórico dos seus GreenPoints convertidos.
+          Confira o histórico dos seus MovePoints convertidos.
         </p>
 
       </section>

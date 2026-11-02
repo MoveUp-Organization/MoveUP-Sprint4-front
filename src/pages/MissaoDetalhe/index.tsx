@@ -102,7 +102,7 @@ export default function MissaoDetalhe() {
 
   const handleConcluir = () => {
     setConcluida(true);
-    alert(`🎉 Missão "${missao.titulo}" concluída! Você ganhou +${missao.recompensa} GreenPoints!`);
+    alert(`🎉 Missão "${missao.titulo}" concluída! Você ganhou +${missao.recompensa} MovePoints!`);
   };
 
   return (
