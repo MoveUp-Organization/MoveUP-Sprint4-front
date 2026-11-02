@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 interface FaqItemData {
   id: number;
@@ -25,7 +26,7 @@ const faqData: FaqItemData[] = [
   {
     id: 4,
     pergunta: 'Como posso resgatar passagens?',
-    resposta: 'Acesse a página de Voucher, escolha o tipo de transporte e converta seus GreenPoints em créditos de passagem.',
+    resposta: 'Acesse a página de Conversão, escolha o tipo de transporte e converta seus MovePoints em créditos de passagem.',
   },
   {
 
@@ -37,7 +38,13 @@ const faqData: FaqItemData[] = [
 ];
 
 export default function FAQ() {
-  const [busca, setBusca] = useState('');
+  const { register, watch } = useForm<{ busca: string }>({
+  defaultValues: {
+    busca: '',
+  },
+});
+
+  const busca = watch('busca');
   const [abertoId, setAbertoId] = useState<number | null>(1); // 1 starts open
 
   const toggleAccordion = (id: number) => {
@@ -63,8 +70,7 @@ export default function FAQ() {
         <input
           type="text"
           placeholder="Buscar por uma pergunta..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
+          {...register('busca')}
           className="w-full py-4 pl-12 pr-4 bg-white border-2 border-transparent focus:border-primary outline-none transition-colors text-dark"
         />
       </div>

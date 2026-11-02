@@ -1,13 +1,16 @@
-
+// MOVEUP-CONVERSAO-VERIFICADO: arquivo completo revisado em 2026-11-01
 import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import Botao from '../../components/Botao/Botao';
 
 interface DadosUsuario {
   nome: string;
 }
 
+type PassagemId = 1 | 2;
+
 interface Passagem {
-  id: number;
+  id: PassagemId;
   titulo: string;
   valorReais: number;
   custoUnitario: number;
@@ -44,17 +47,23 @@ const opcoesPassagens: Passagem[] = [
   },
 ];
 
+interface ConversaoFormData {
+  quantidades: number[];
+}
+
 export default function Conversao() {
+  const { control, watch, setValue } = useForm<ConversaoFormData>({
+    defaultValues: {
+      quantidades: [1, 1],
+    },
+  });
   const [dados, setDados] = useState<DadosUsuario>({
     nome: 'EcoViajante',
   });
 
   const [saldo, setSaldo] = useState(5000);
 
-  const [quantidades, setQuantidades] = useState<Record<number, number>>({
-    1: 1,
-    2: 1,
-  });
+  const quantidades = watch('quantidades');
 
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
 
@@ -105,7 +114,7 @@ export default function Conversao() {
     }
   }, []);
 
-  const handleQuantidadeChange = (id: number, value: string) => {
+  const handleQuantidadeChange = (id: PassagemId, value: string) => {
     let num = parseInt(value, 10);
 
     if (isNaN(num) || num < 1) {
@@ -116,14 +125,14 @@ export default function Conversao() {
       num = 50;
     }
 
-    setQuantidades((prev) => ({
-      ...prev,
-      [id]: num,
-    }));
+    setValue(`quantidades.${id - 1}` as const, num, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const handleResgatar = (passagem: Passagem) => {
-    const qtd = quantidades[passagem.id];
+    const qtd = quantidades[passagem.id - 1] ?? 1;
 
     const totalCusto = qtd * passagem.custoUnitario;
     const totalEmReais = qtd * passagem.valorReais;
@@ -179,10 +188,10 @@ export default function Conversao() {
       JSON.stringify(novoHistorico)
     );
 
-    setQuantidades((prev) => ({
-      ...prev,
-      [passagem.id]: 1,
-    }));
+    setValue(`quantidades.${passagem.id - 1}` as const, 1, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
 
     alert(
       `✓ Sucesso! Foram creditadas ${qtd} passagem(ns).
@@ -246,7 +255,7 @@ export default function Conversao() {
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[760px] mx-auto">
 
           {opcoesPassagens.map((passagem) => {
-            const qtd = quantidades[passagem.id];
+            const qtd = quantidades[passagem.id - 1] ?? 1;
             const total = qtd * passagem.custoUnitario;
             const totalReais = qtd * passagem.valorReais;
 
@@ -283,17 +292,26 @@ export default function Conversao() {
                       Quantidade:
                     </label>
 
-                    <input
-                      id={`qtd-${passagem.id}`}
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={qtd}
-                      onChange={(e) =>
-                        handleQuantidadeChange(passagem.id, e.target.value)
-                      }
-                      className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-cyan outline-none"
+
+                    <Controller
+                      control={control}
+                      name={`quantidades.${passagem.id - 1}` as const}
+                      render={({ field }) => (
+                        <input
+                          {...field}
+                          id={`qtd-${passagem.id}`}
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={field.value ?? 1}
+                          onChange={(e) =>
+                            handleQuantidadeChange(passagem.id, e.target.value)
+                          }
+                          className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-cyan outline-none"
+                        />
+                      )}
                     />
+
                   </div>
 
                   <p className="font-bold text-dark mb-2">
