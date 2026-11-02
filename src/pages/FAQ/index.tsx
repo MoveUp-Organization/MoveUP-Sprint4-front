@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 
 interface FaqItemData {
   id: number;
@@ -20,12 +21,12 @@ const faqData: FaqItemData[] = [
   {
     id: 3,
     pergunta: 'Como funcionam as missões?',
-    resposta: 'As missões permitem que os usuários completem tarefas sustentáveis e acumulem GreenPoints para trocar por passagens ou benefícios.',
+    resposta: 'As missões permitem que os usuários completem tarefas sustentáveis e acumulem MovePoints para trocar por passagens ou benefícios.',
   },
   {
     id: 4,
     pergunta: 'Como posso resgatar passagens?',
-    resposta: 'Acesse a página de Voucher, escolha o tipo de transporte e converta seus GreenPoints em créditos de passagem.',
+    resposta: 'Acesse a página de Conversão, escolha o tipo de transporte e converta seus MovePoints em créditos de passagem.',
   },
   {
 
@@ -37,8 +38,18 @@ const faqData: FaqItemData[] = [
 ];
 
 export default function FAQ() {
-  const [busca, setBusca] = useState('');
-  const [abertoId, setAbertoId] = useState<number | null>(1); // 1 starts open
+  const { register, control } = useForm<{ busca: string }>({
+    defaultValues: {
+      busca: '',
+    },
+  });
+
+  const busca = useWatch({
+    control,
+    name: 'busca',
+  }) ?? '';
+
+  const [abertoId, setAbertoId] = useState<number | null>(null);
 
   const toggleAccordion = (id: number) => {
     setAbertoId(abertoId === id ? null : id);
@@ -63,8 +74,8 @@ export default function FAQ() {
         <input
           type="text"
           placeholder="Buscar por uma pergunta..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
+          aria-label="Buscar perguntas frequentes"
+          {...register('busca')}
           className="w-full py-4 pl-12 pr-4 bg-white border-2 border-transparent focus:border-primary outline-none transition-colors text-dark"
         />
       </div>
@@ -80,13 +91,13 @@ export default function FAQ() {
             return (
               <article
                 key={item.id}
-                className={`bg-white rounded-2xl overflow-hidden shadow-sm transition-all duration-300 border-2 ${
-                  isOpen ? 'border-primary shadow-md' : 'border-transparent'
+                className={`bg-white rounded-2xl overflow-hidden shadow-sm transition-all duration-300 border-2 focus-within:ring-2 focus-within:ring-primary ${                  isOpen ? 'border-primary shadow-md' : 'border-transparent'
                 }`}
               >
                 <button
                   onClick={() => toggleAccordion(item.id)}
-                  className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
+                  aria-expanded={isOpen}
+                  className="w-full flex items-center justify-between p-6 text-left focus-visible:outline-none"
               >
                   <div className="flex items-center gap-4">
                     <span className="text-gray-300 font-bold text-xl w-8">

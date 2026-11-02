@@ -45,10 +45,28 @@ export default function Contato() {
                 className={`w-full px-4 py-3 rounded-xl border-2 transition-colors outline-none text-sm ${
                   errors.nome ? 'border-danger bg-red-50 focus:border-danger' : 'border-gray-200 focus:border-primary bg-gray-50'
                 }`}
+                
                 {...register('nome', {
                   required: 'O nome é obrigatório.',
-                  minLength: { value: 3, message: 'Mínimo de 3 caracteres.' },
+                  maxLength: {
+                    value: 80,
+                    message: 'O nome deve ter no máximo 80 caracteres.',
+                  },
+                  validate: (valor) => {
+                    const nome = valor.trim().replace(/\s+/g, ' ');
+
+                    if (nome.length < 3) {
+                      return 'O nome deve ter pelo menos 3 caracteres.';
+                    }
+
+                    if (!/^[\p{L}]+(?:[ '\u2019-][\p{L}]+)*$/u.test(nome)) {
+                      return 'Digite um nome válido, sem números ou símbolos.';
+                    }
+
+                    return true;
+                  },
                 })}
+
               />
               {errors.nome && <p className="text-danger text-xs mt-1 font-medium">{errors.nome.message}</p>}
             </div>
@@ -87,7 +105,24 @@ export default function Contato() {
               className={`w-full px-4 py-3 rounded-xl border-2 transition-colors outline-none text-sm ${
                 errors.assunto ? 'border-danger bg-red-50 focus:border-danger' : 'border-gray-200 focus:border-primary bg-gray-50'
               }`}
-              {...register('assunto', { required: 'O assunto é obrigatório.' })}
+              
+            {...register('assunto', {
+              required: 'O assunto é obrigatório.',
+              validate: (valor) => {
+                const assunto = valor.trim();
+
+                if (assunto.length < 5) {
+                  return 'O assunto deve ter pelo menos 5 caracteres.';
+                }
+
+                if (assunto.length > 100) {
+                  return 'O assunto deve ter no máximo 100 caracteres.';
+                }
+
+                return true;
+              },
+            })}
+
             />
             {errors.assunto && <p className="text-danger text-xs mt-1 font-medium">{errors.assunto.message}</p>}
           </div>
@@ -103,10 +138,24 @@ export default function Contato() {
               className={`w-full px-4 py-3 rounded-xl border-2 transition-colors outline-none text-sm resize-y ${
                 errors.mensagem ? 'border-danger bg-red-50 focus:border-danger' : 'border-gray-200 focus:border-primary bg-gray-50'
               }`}
+             
               {...register('mensagem', {
                 required: 'A mensagem é obrigatória.',
-                minLength: { value: 10, message: 'A mensagem deve ter pelo menos 10 caracteres.' },
+                validate: (valor) => {
+                  const mensagem = valor.trim();
+
+                  if (mensagem.length < 10) {
+                    return 'A mensagem deve ter pelo menos 10 caracteres.';
+                  }
+
+                  if (mensagem.length > 1000) {
+                    return 'A mensagem deve ter no máximo 1000 caracteres.';
+                  }
+
+                  return true;
+                },
               })}
+
             ></textarea>
             {errors.mensagem && <p className="text-danger text-xs mt-1 font-medium">{errors.mensagem.message}</p>}
           </div>

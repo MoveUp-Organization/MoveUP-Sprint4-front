@@ -18,7 +18,6 @@ import Sobre from './pages/Sobre/index.tsx'
 import Carteira from './pages/Carteira/index.tsx'
 import Error from './pages/Error/index.tsx'
 import MissaoDetalhe from './pages/MissaoDetalhe/index.tsx'
-import TransferirPontos from './pages/TransferirPontos/index.tsx'
 import Historico from './pages/Historico/index.tsx'
 
 
@@ -41,7 +40,7 @@ const router = createBrowserRouter([
       { path: 'missoes/:id', element: <MissaoDetalhe /> },
       { path: 'sobre', element: <Sobre /> },
       { path: 'cartao', element: <Carteira /> },
-      { path: 'transferir-pontos', element: <TransferirPontos /> },
+      { path: 'transferir-pontos', element: <Navigate to="/conversao" replace /> },
       { path: 'historico', element: <Historico /> },
       
     ],
