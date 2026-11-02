@@ -1,6 +1,6 @@
 // MOVEUP-CONVERSAO-VERIFICADO: arquivo completo revisado em 2026-11-01
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import Botao from '../../components/Botao/Botao';
 
 interface DadosUsuario {
@@ -52,7 +52,7 @@ interface ConversaoFormData {
 }
 
 export default function Conversao() {
-  const { control, watch, setValue } = useForm<ConversaoFormData>({
+  const { control, setValue } = useForm<ConversaoFormData>({
     defaultValues: {
       quantidades: [1, 1],
     },
@@ -63,7 +63,10 @@ export default function Conversao() {
 
   const [saldo, setSaldo] = useState(5000);
 
-  const quantidades = watch('quantidades');
+  const quantidades = useWatch({
+  control,
+  name: 'quantidades',
+}) ?? [1, 1];
 
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
 
