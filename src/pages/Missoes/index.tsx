@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 interface Missao {
@@ -9,6 +10,42 @@ interface Missao {
   categoria: 'diaria' | 'conteudo' | 'desafio' | 'especial';
   concluida: boolean;
 }
+
+interface ModalDados {
+  titulo: string;
+  recompensa: number;
+  co2Evitado: number | null;
+  distanciaKm: number;
+}
+
+interface RegistroMobilidade {
+  id: string;
+  data: string;
+  tipo: string;
+  distanciaKm: number;
+  pontos: number;
+  co2Evitado: number;
+}
+
+interface Atividade {
+  id: number;
+  data: string;
+  tipo: string;
+  distancia: string;
+  pontos: string;
+  co2Evitado: number;
+}
+
+interface DadosSaldo {
+  saldo?: number;
+  greenPointsAcumulados?: number;
+}
+
+const CHAVE_MISSOES = 'moveupMissoes';
+const CHAVE_REGISTROS = 'moveupRegistrosMobilidade';
+const CHAVE_ATIVIDADES = 'moveupAtividades';
+const CHAVE_SALDO = 'moveup_saldo';
+const CHAVE_PONTOS = 'greenPointsSaldo';
 
 const missoesIniciais: Missao[] = [
   {
@@ -75,19 +112,220 @@ const labelBadge: Record<string, string> = {
   especial: 'Especial',
 };
 
+const calcularCo2Evitado = (kmPercorrido: number): number => {
+  const co2CarroPorKm = 0.21;
+  const co2TransportePublicoPorKm = 0.05;
+
+  return (co2CarroPorKm - co2TransportePublicoPorKm) * kmPercorrido;
+};
+
+const carregarMissoes = (): Missao[] => {
+  try {
+    const salvas = localStorage.getItem(CHAVE_MISSOES);
+
+    if (!salvas) return missoesIniciais;
+
+    const missoesSalvas: Missao[] = JSON.parse(salvas);
+
+    return missoesIniciais.map((missao) => {
+      const salva = missoesSalvas.find((item) => item.id === missao.id);
+      return salva ? { ...missao, concluida: salva.concluida } : missao;
+    });
+  } catch {
+    return missoesIniciais;
+  }
+};
+
+const carregarPontos = (): number => {
+  try {
+    const saldoSalvo = sessionStorage.getItem(CHAVE_SALDO);
+
+    if (saldoSalvo) {
+      const dados: DadosSaldo = JSON.parse(saldoSalvo);
+
+      if (typeof dados.greenPointsAcumulados === 'number') {
+        return dados.greenPointsAcumulados;
+      }
+    }
+
+    const pontosLocais = localStorage.getItem(CHAVE_PONTOS);
+
+    if (pontosLocais) {
+      const pontos = JSON.parse(pontosLocais);
+
+      if (typeof pontos === 'number') return pontos;
+    }
+
+    return 1450;
+  } catch {
+    return 1450;
+  }
+};
+
+const salvarPontos = (pontos: number) => {
+  let saldo: DadosSaldo = {};
+
+  try {
+    const salvo = sessionStorage.getItem(CHAVE_SALDO);
+    if (salvo) saldo = JSON.parse(salvo);
+  } catch {
+    saldo = {};
+  }
+
+  sessionStorage.setItem(
+    CHAVE_SALDO,
+    JSON.stringify({
+      ...saldo,
+      greenPointsAcumulados: pontos,
+    })
+  );
+
+  localStorage.setItem(CHAVE_PONTOS, JSON.stringify(pontos));
+};
+
+const salvarRegistroMobilidade = (
+  tipo: string,
+  distanciaKm: number,
+  co2Evitado: number
+) => {
+  const registros: RegistroMobilidade[] = JSON.parse(
+    localStorage.getItem(CHAVE_REGISTROS) || '[]'
+  );
+
+  registros.push({
+    id: `${Date.now()}-${Math.random()}`,
+    data: new Date().toLocaleDateString('en-CA'),
+    tipo,
+    distanciaKm,
+    pontos: 0,
+    co2Evitado,
+  });
+
+  localStorage.setItem(CHAVE_REGISTROS, JSON.stringify(registros));
+};
+
+const salvarAtividade = (
+  titulo: string,
+  pontos: number,
+  distanciaKm: number,
+  co2Evitado: number
+) => {
+  const atividades: Atividade[] = JSON.parse(
+    localStorage.getItem(CHAVE_ATIVIDADES) || '[]'
+  );
+
+  atividades.unshift({
+    id: Date.now(),
+    data: new Date().toLocaleDateString('pt-BR'),
+    tipo: `🎯 Missão: ${titulo}`,
+    distancia: `${distanciaKm} km`,
+    pontos: `+${pontos} pts`,
+    co2Evitado,
+  });
+
+  localStorage.setItem(CHAVE_ATIVIDADES, JSON.stringify(atividades));
+};
+
 export default function Missoes() {
-  const [missoes, setMissoes] = useState<Missao[]>(missoesIniciais);
+  const [missoes, setMissoes] = useState<Missao[]>(carregarMissoes);
+  const [movePoints, setMovePoints] = useState<number>(carregarPontos);
+  const [modal, setModal] = useState<ModalDados | null>(null);
+  const [distancia, setDistancia] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem(CHAVE_MISSOES, JSON.stringify(missoes));
+  }, [missoes]);
+
+  const finalizarMissao = (
+    missao: Missao,
+    distanciaKm: number,
+    co2Evitado: number
+  ) => {
+    if (missao.concluida) return;
+
+    const novasMissoes = missoes.map((item) =>
+      item.id === missao.id ? { ...item, concluida: true } : item
+    );
+
+    setMissoes(novasMissoes);
+    localStorage.setItem(CHAVE_MISSOES, JSON.stringify(novasMissoes));
+
+    const novosPontos = movePoints + missao.recompensa;
+
+    setMovePoints(novosPontos);
+    salvarPontos(novosPontos);
+
+    if (distanciaKm > 0) {
+      const tipo = missao.id === 5 ? 'bicicleta' : 'onibus';
+
+      salvarRegistroMobilidade(tipo, distanciaKm, co2Evitado);
+    }
+
+    salvarAtividade(
+      missao.titulo,
+      missao.recompensa,
+      distanciaKm,
+      co2Evitado
+    );
+
+    setModal({
+      titulo: missao.titulo,
+      recompensa: missao.recompensa,
+      co2Evitado,
+      distanciaKm,
+    });
+  };
 
   const concluirMissao = (id: number) => {
-    setMissoes((prev) =>
-      prev.map((m) => {
-        if (m.id === id && !m.concluida) {
-          alert(`Parabéns! Você completou a missão e ganhou ${m.recompensa} pontos.`);
-          return { ...m, concluida: true };
-        }
-        return m;
-      })
-    );
+    const missao = missoes.find((item) => item.id === id);
+
+    if (!missao || missao.concluida) return;
+
+    // A missão de transporte público exige a distância percorrida.
+    if (missao.id === 6) {
+      setModal({
+        titulo: missao.titulo,
+        recompensa: missao.recompensa,
+        co2Evitado: null,
+        distanciaKm: 0,
+      });
+      return;
+    }
+
+    // A missão de bicicleta registra os 5 km previstos na descrição.
+    if (missao.id === 5) {
+      finalizarMissao(missao, 5, 0);
+      return;
+    }
+
+    // As demais missões não geram distância ou CO₂.
+    finalizarMissao(missao, 0, 0);
+  };
+
+  const confirmarTransportePublico = () => {
+    const kmPercorrido = Number(distancia.replace(',', '.'));
+
+    if (
+      !distancia.trim() ||
+      !Number.isFinite(kmPercorrido) ||
+      kmPercorrido <= 0
+    ) {
+      return;
+    }
+
+    const missao = missoes.find((item) => item.id === 6);
+
+    if (!missao || missao.concluida) return;
+
+    const co2Evitado = calcularCo2Evitado(kmPercorrido);
+
+    finalizarMissao(missao, kmPercorrido, co2Evitado);
+    setDistancia('');
+  };
+
+  const fecharModal = () => {
+    setModal(null);
+    setDistancia('');
   };
 
   return (
@@ -96,6 +334,7 @@ export default function Missoes() {
         <h1 className="text-3xl sm:text-4xl font-extrabold text-dark mb-3">
           Missões Disponíveis
         </h1>
+
         <p className="text-gray-500 text-lg">
           Complete as tarefas abaixo para acumular pontos e subir de nível!
         </p>
@@ -115,11 +354,18 @@ export default function Missoes() {
               </span>
 
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-bold text-dark">{missao.titulo}</h2>
-                <span className="text-green font-bold text-sm">+{missao.recompensa} pts</span>
+                <h2 className="text-lg font-bold text-dark">
+                  {missao.titulo}
+                </h2>
+
+                <span className="text-green font-bold text-sm">
+                  +{missao.recompensa} pts
+                </span>
               </div>
 
-              <p className="text-gray-500 text-sm leading-relaxed mb-4">{missao.descricao}</p>
+              <p className="text-gray-500 text-sm leading-relaxed mb-4">
+                {missao.descricao}
+              </p>
             </div>
 
             <div className="flex gap-2">
@@ -138,6 +384,7 @@ export default function Missoes() {
                   >
                     Concluir Missão
                   </button>
+
                   <Link
                     to={`/missoes/${missao.id}`}
                     className="py-2.5 px-4 rounded-xl border-2 border-primary text-primary font-bold text-sm transition-colors hover:bg-primary hover:text-white"
@@ -150,6 +397,124 @@ export default function Missoes() {
           </article>
         ))}
       </section>
+
+      {modal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          onClick={fecharModal}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-modal"
+            className="bg-white w-full max-w-md rounded-2xl p-7 shadow-2xl text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
+              <span className="text-3xl text-emerald-600">✓</span>
+            </div>
+
+            <h2
+              id="titulo-modal"
+              className="text-2xl font-extrabold text-dark mb-2"
+            >
+              {modal.co2Evitado === null &&
+              modal.titulo === 'Transporte Público'
+                ? 'Registre sua distância!'
+                : 'Missão concluída!'}
+            </h2>
+
+            {modal.co2Evitado === null &&
+            modal.titulo === 'Transporte Público' ? (
+              <>
+                <p className="text-gray-500 mb-5">
+                  Informe a distância total percorrida nos três dias de
+                  transporte público.
+                </p>
+
+                <div className="text-left mb-5">
+                  <label
+                    htmlFor="distancia"
+                    className="block text-sm font-semibold text-dark mb-2"
+                  >
+                    Distância total percorrida (km)
+                  </label>
+
+                  <input
+                    id="distancia"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={distancia}
+                    onChange={(e) => setDistancia(e.target.value)}
+                    placeholder="Ex.: 15"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-primary"
+                  />
+                </div>
+
+                <button
+                  onClick={confirmarTransportePublico}
+                  disabled={
+                    !distancia.trim() ||
+                    !Number.isFinite(Number(distancia.replace(',', '.'))) ||
+                    Number(distancia.replace(',', '.')) <= 0
+                  }
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Calcular CO₂ e Concluir
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 mb-5">
+                  Parabéns! Você completou a missão {modal.titulo}.
+                </p>
+
+                <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-4 mb-4">
+                  <p className="text-white text-sm font-medium">
+                    Você ganhou
+                  </p>
+
+                  <p className="text-white text-3xl font-extrabold">
+                    +{modal.recompensa} MovePoints
+                  </p>
+                </div>
+
+                {modal.distanciaKm > 0 && (
+                  <div className="bg-blue-50 rounded-xl p-4 mb-4">
+                    <p className="text-blue-700 font-semibold mb-1">
+                      Distância registrada
+                    </p>
+
+                    <p className="text-blue-800 text-2xl font-extrabold">
+                      {modal.distanciaKm.toFixed(2)} km
+                    </p>
+                  </div>
+                )}
+
+                {modal.co2Evitado !== null && modal.co2Evitado > 0 && (
+                  <div className="bg-emerald-50 rounded-xl p-4 mb-6">
+                    <p className="text-emerald-700 font-semibold mb-1">
+                      🌱 CO₂ evitado
+                    </p>
+
+                    <p className="text-emerald-800 text-2xl font-extrabold">
+                      {modal.co2Evitado.toFixed(2)} kg
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={fecharModal}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold transition-all hover:opacity-90"
+                >
+                  Continuar
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

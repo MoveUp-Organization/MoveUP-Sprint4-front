@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface DadosCarteira {
@@ -10,16 +11,24 @@ interface DadosCarteira {
   distanciaPercorrida: number;
 }
 
+interface RegistroMobilidade {
+  data: string;
+  tipo: string;
+  distanciaKm: number;
+  pontos: number;
+}
+
 const carregarDadosCarteira = (): DadosCarteira => {
   const dados: DadosCarteira = {
     nome: 'EcoViajante',
     saldo: 0,
-    greenPoints: 2450,
+    greenPoints: 0,
     numeroCartao: '** ** ** 4827',
-    co2Evitado: 12.5,
-    distanciaPercorrida: 42.5,
+    co2Evitado: 0,
+    distanciaPercorrida: 0,
   };
 
+  // Carrega os dados do usuário
   try {
     const cadastroSalvo = localStorage.getItem('moveupUsuario');
 
@@ -31,21 +40,79 @@ const carregarDadosCarteira = (): DadosCarteira => {
     console.error('Erro ao carregar cadastro:', error);
   }
 
+  // Carrega o saldo e os MovePoints
   try {
     const saldoSalvo = sessionStorage.getItem('moveup_saldo');
 
     if (saldoSalvo) {
       const dadosSaldo = JSON.parse(saldoSalvo);
 
-      dados.saldo = dadosSaldo.saldo ?? dados.saldo;
-      dados.greenPoints =
-        dadosSaldo.greenPointsAcumulados ?? dados.greenPoints;
-      dados.co2Evitado = dadosSaldo.co2Evitado ?? dados.co2Evitado;
-      dados.distanciaPercorrida =
-        dadosSaldo.distanciaPercorrida ?? dados.distanciaPercorrida;
+      dados.saldo = Number(dadosSaldo.saldo ?? 0);
+
+      dados.greenPoints = Number(
+        dadosSaldo.greenPointsAcumulados ??
+        dadosSaldo.greenPoints ??
+        dadosSaldo.movePoints ??
+        0
+      );
+    }
+
+    // Compatibilidade com um saldo de pontos salvo separadamente
+    const pontosSalvos = localStorage.getItem('greenPointsSaldo');
+
+    if (pontosSalvos !== null) {
+      const pontos = JSON.parse(pontosSalvos);
+
+      if (typeof pontos === 'number') {
+        dados.greenPoints = pontos;
+      } else if (pontos && typeof pontos === 'object') {
+        dados.greenPoints = Number(
+          pontos.greenPointsAcumulados ??
+          pontos.greenPoints ??
+          pontos.movePoints ??
+          dados.greenPoints
+        );
+      }
     }
   } catch (error) {
-    console.error('Erro ao carregar saldo:', error);
+    console.error('Erro ao carregar saldo e MovePoints:', error);
+  }
+
+  // Carrega os registros reais de mobilidade
+  try {
+    const registrosSalvos = localStorage.getItem(
+      'moveupRegistrosMobilidade'
+    );
+
+    if (registrosSalvos) {
+      const registros: RegistroMobilidade[] = JSON.parse(registrosSalvos);
+
+      const distanciaTotal = registros.reduce((total, registro) => {
+        const distancia = Number(registro.distanciaKm);
+
+        return total + (
+          Number.isFinite(distancia) && distancia > 0
+            ? distancia
+            : 0
+        );
+      }, 0);
+
+      // Regra de negócio:
+      // CO₂ evitado = (emissão do carro - emissão do transporte público) x distância
+      const co2CarroPorKm = 0.21;
+      const co2TransportePublicoPorKm = 0.05;
+
+      dados.distanciaPercorrida = distanciaTotal;
+
+      dados.co2Evitado =
+        (co2CarroPorKm - co2TransportePublicoPorKm) *
+        distanciaTotal;
+    }
+  } catch (error) {
+    console.error(
+      'Erro ao calcular indicadores de mobilidade:',
+      error
+    );
   }
 
   return dados;
@@ -56,7 +123,26 @@ export default function MeuCartao() {
 
   const [saldoVisivel, setSaldoVisivel] = useState(true);
 
-  const [dados] = useState<DadosCarteira>(carregarDadosCarteira);
+  const [dados, setDados] = useState<DadosCarteira>(
+    carregarDadosCarteira
+  );
+
+  // Atualiza os dados quando a tela recebe foco ou quando o armazenamento muda
+  useEffect(() => {
+    const atualizarDados = () => {
+      setDados(carregarDadosCarteira());
+    };
+
+    window.addEventListener('focus', atualizarDados);
+    window.addEventListener('storage', atualizarDados);
+    window.addEventListener('pageshow', atualizarDados);
+
+    return () => {
+      window.removeEventListener('focus', atualizarDados);
+      window.removeEventListener('storage', atualizarDados);
+      window.removeEventListener('pageshow', atualizarDados);
+    };
+  }, []);
 
   const toggleSaldo = () => {
     setSaldoVisivel((prev) => !prev);
@@ -92,6 +178,7 @@ export default function MeuCartao() {
 
             <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-white/10" />
             <div className="absolute -right-10 bottom-[-70px] w-56 h-56 rounded-full bg-white/10" />
+
             <div className="relative z-10 flex items-center justify-between mb-10">
               <div>
                 <p className="text-sm font-medium text-white/70">
@@ -205,64 +292,65 @@ export default function MeuCartao() {
               <p className="text-sm text-gray-400 mt-2">
                 Valor disponível na carteira
               </p>
-
-              
-              <section className="bg-white rounded-2xl p-6 sm:p-8 shadow-md">
-                <h2 className="text-lg font-bold text-dark mb-5">
-                  Indicadores
-                </h2>
-
-                <div className="space-y-5">
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-green/10 text-2xl shrink-0">
-                      🌿
-                    </span>
-
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">
-                        CO₂ evitado
-                      </p>
-                      <p className="text-xl font-bold text-dark">
-                        {dados.co2Evitado.toFixed(1).replace('.', ',')} kg
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-cyan/10 text-2xl shrink-0">
-                      🚲
-                    </span>
-
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">
-                        Distância percorrida
-                      </p>
-                      <p className="text-xl font-bold text-dark">
-                        {dados.distanciaPercorrida.toFixed(1).replace('.', ',')} km
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-secondary/10 text-2xl shrink-0">
-                      ⭐
-                    </span>
-
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-500">
-                        MovePoints acumulados
-                      </p>
-                      <p className="text-xl font-bold text-dark">
-                        {dados.greenPoints.toLocaleString('pt-BR')} pts
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
             </div>
 
-            
+            <section className="bg-white rounded-2xl p-6 sm:p-8 shadow-md">
+              <h2 className="text-lg font-bold text-dark mb-5">
+                Indicadores
+              </h2>
+
+              <div className="space-y-5">
+
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-green/10 text-2xl shrink-0">
+                    🌿
+                  </span>
+
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500">
+                      CO₂ evitado
+                    </p>
+
+                    <p className="text-xl font-bold text-dark">
+                      {dados.co2Evitado.toFixed(2).replace('.', ',')} kg
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-cyan/10 text-2xl shrink-0">
+                    🚲
+                  </span>
+
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500">
+                      Distância percorrida
+                    </p>
+
+                    <p className="text-xl font-bold text-dark">
+                      {dados.distanciaPercorrida.toFixed(1).replace('.', ',')} km
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-secondary/10 text-2xl shrink-0">
+                    ⭐
+                  </span>
+
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500">
+                      MovePoints acumulados
+                    </p>
+
+                    <p className="text-xl font-bold text-dark">
+                      {dados.greenPoints.toLocaleString('pt-BR')} pts
+                    </p>
+                  </div>
+                </div>
+
+              </div>
+            </section>
 
           </div>
         </div>
