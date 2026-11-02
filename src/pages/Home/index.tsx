@@ -330,7 +330,7 @@ export default function Home() {
     );
   };
 
-  const concluirMissao = (id: number) => {
+  const concluirMissao = (id: number, atividadeId: number) => {
     const missao = missoesSemana.find((m) => m.id === id);
 
     if (!missao || missao.concluida) {
@@ -367,7 +367,7 @@ export default function Home() {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
     const novaAtividade: Atividade = {
-      id: Date.now(),
+      id: atividadeId,
       data: hoje,
       tipo: '🎯 Missão',
       distancia: 0,
@@ -567,7 +567,7 @@ export default function Home() {
                 {!missao.concluida && (
                   <button
                     type="button"
-                    onClick={() => concluirMissao(missao.id)}
+                    onClick={() => concluirMissao(missao.id, Date.now())}
                     className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-lg font-semibold text-sm hover:opacity-90 transition"
                   >
                     Concluir
