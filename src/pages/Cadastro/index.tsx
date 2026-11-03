@@ -1,6 +1,7 @@
 import { useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../img/logo.png';
+import { usuarioService } from '../../services/usuarioService';
 
 interface CadastroFormData {
   nome: string;
@@ -26,17 +27,22 @@ export default function Cadastro() {
   });
 
 
-  const onSubmit = (data: CadastroFormData) => {
-    localStorage.setItem(
-      'moveupUsuario',
-      JSON.stringify({
-        nome: data.nome,
-        email: data.email,
-        senha: data.senha,
-      })
-    );
+
+const onSubmit = async (data: CadastroFormData) => {
+  try {
+    await usuarioService.cadastrar({
+      nomeUsuario: data.nome.trim(),
+      email: data.email.trim(),
+      senha: data.senha,
+    });
+
+    alert('Cadastro realizado com sucesso!');
     navigate('/login');
-  };
+  } catch (error) {
+    console.error('Erro ao cadastrar usuário:', error);
+    alert('Não foi possível realizar o cadastro. Tente novamente.');
+  }
+};
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
@@ -162,17 +168,24 @@ export default function Cadastro() {
                     ? 'border-danger bg-red-50 focus:border-danger'
                     : 'border-gray-200 focus:border-secondary bg-gray-50'
                 }`}
+                
                 {...register('senha', {
                   required: 'A senha é obrigatória.',
                   minLength: {
-                    value: 5,
-                    message: 'A senha deve ter pelo menos 5 caracteres.',
+                    value: 8,
+                    message: 'A senha deve ter pelo menos 8 caracteres.',
                   },
                   maxLength: {
-                    value: 30,
-                    message: 'A senha deve ter no máximo 30 caracteres.',
+                    value: 100,
+                    message: 'A senha deve ter no máximo 100 caracteres.',
+                  },
+                  pattern: {
+                    value: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!_]).*$/,
+                    message:
+                      'A senha deve conter letra maiúscula, minúscula, número e caractere especial.',
                   },
                 })}
+
               />
 
               {errors.senha && (
