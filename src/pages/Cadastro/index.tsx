@@ -11,9 +11,16 @@ interface CadastroFormData {
   confirmarSenha: string;
 }
 
+interface ContaLocal {
+  nome: string;
+  email: string;
+  numeroCartao: string;
+  salt: string;
+  verificador: string;
+}
+
 export default function Cadastro() {
   const navigate = useNavigate();
-
 
   const {
     register,
@@ -27,87 +34,111 @@ export default function Cadastro() {
     name: 'senha',
   });
 
-const onSubmit = async (data: CadastroFormData) => {
-  const nome = data.nome.trim();
-  const email = data.email.trim().toLowerCase();
+  const onSubmit = async (data: CadastroFormData) => {
+    const nome = data.nome.trim();
+    const email = data.email.trim().toLowerCase();
 
-  // Número fictício de 16 dígitos para o cartão.
-  const numeroCartao = '99' + Array.from(
-  crypto.getRandomValues(new Uint8Array(14)),
-  (numero) => numero % 10
-).join('');
+    // Número fictício de 16 dígitos para o cartão.
+    const numeroCartao =
+      '99' +
+      Array.from(
+        crypto.getRandomValues(new Uint8Array(14)),
+        (numero) => numero % 10
+      ).join('');
 
-  try {
-    await usuarioService.cadastrar({
-      nomeUsuario: nome,
-      email,
-      senha: data.senha,
-    });
-  } catch (error) {
-    console.error('Erro ao cadastrar usuário:', error);
-    alert('Não foi possível cadastrar o usuário.');
-    return;
-  }
+    try {
+      // Verifica se o e-mail já existe no armazenamento demonstrativo.
+      const contasSalvas: ContaLocal[] = JSON.parse(
+        localStorage.getItem('moveupCadastroDemo') || '[]'
+      );
 
-  try {
-    await voucherService.cadastrar({
-      numeroCartao,
-      titular: nome,
-      tipo: 'Bilhete Único MoveUp',
-      status: 'ATIVO',
-      saldoDisponivel: 0,
-    });
+      const emailJaCadastrado = contasSalvas.some(
+        (conta) => conta.email.trim().toLowerCase() === email
+      );
 
-    // Guarda apenas a referência para o fluxo demonstrativo.
+      if (emailJaCadastrado) {
+        alert('Este e-mail já possui um cadastro demonstrativo neste navegador.');
+        return;
+      }
 
-const salt = crypto.randomUUID();
+      // Cadastra o usuário na API Java.
+      await usuarioService.cadastrar({
+        nomeUsuario: nome,
+        email,
+        senha: data.senha,
+      });
+    } catch (error) {
+      console.error('Erro ao cadastrar usuário:', error);
+      alert('Não foi possível cadastrar o usuário.');
+      return;
+    }
 
-const chave = await crypto.subtle.importKey(
-  'raw',
-  new TextEncoder().encode(data.senha),
-  'PBKDF2',
-  false,
-  ['deriveBits']
-);
+    try {
+      // Cria o cartão na API Java.
+      await voucherService.cadastrar({
+        numeroCartao,
+        titular: nome,
+        tipo: 'Bilhete Único MoveUp',
+        status: 'ATIVO',
+        saldoDisponivel: 0,
+      });
 
-const resultado = await crypto.subtle.deriveBits(
-  {
-    name: 'PBKDF2',
-    salt: new TextEncoder().encode(salt),
-    iterations: 100000,
-    hash: 'SHA-256',
-  },
-  chave,
-  256
-);
+      // Guarda apenas a referência para o fluxo demonstrativo.
+      const salt = crypto.randomUUID();
 
-const verificador = Array.from(
-  new Uint8Array(resultado),
-  (byte) => byte.toString(16).padStart(2, '0')
-).join('');
+      const chave = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(data.senha),
+        'PBKDF2',
+        false,
+        ['deriveBits']
+      );
 
-localStorage.setItem(
-  'moveupCadastroDemo',
-  JSON.stringify({
-    nome,
-    email,
-    numeroCartao,
-    salt,
-    verificador,
-  })
-);
+      const resultado = await crypto.subtle.deriveBits(
+        {
+          name: 'PBKDF2',
+          salt: new TextEncoder().encode(salt),
+          iterations: 100000,
+          hash: 'SHA-256',
+        },
+        chave,
+        256
+      );
 
+      const verificador = Array.from(
+        new Uint8Array(resultado),
+        (byte) => byte.toString(16).padStart(2, '0')
+      ).join('');
 
-    alert('Cadastro e cartão criados com sucesso!');
-    navigate('/login');
-  } catch (error) {
-    console.error('Erro ao criar cartão:', error);
-    alert(
-      'O usuário foi cadastrado, mas não foi possível concluir o cartão. Não repita o cadastro agora para evitar duplicidade.'
-    );
-  }
-};
+      // Recupera os cadastros anteriores e adiciona a nova conta.
+      const contasAtualizadas: ContaLocal[] = JSON.parse(
+        localStorage.getItem('moveupCadastroDemo') || '[]'
+      );
 
+      contasAtualizadas.push({
+        nome,
+        email,
+        numeroCartao,
+        salt,
+        verificador,
+      });
+
+      localStorage.setItem(
+        'moveupCadastroDemo',
+        JSON.stringify(contasAtualizadas)
+      );
+
+      alert('Cadastro e cartão criados com sucesso!');
+
+      navigate('/login');
+    } catch (error) {
+      console.error('Erro ao criar cartão:', error);
+
+      alert(
+        'O usuário foi cadastrado, mas não foi possível concluir o cartão. Não repita o cadastro agora para evitar duplicidade.'
+      );
+    }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
@@ -173,7 +204,6 @@ localStorage.setItem(
                     return true;
                   },
                 })}
-
               />
 
               {errors.nome && (
@@ -233,7 +263,6 @@ localStorage.setItem(
                     ? 'border-danger bg-red-50 focus:border-danger'
                     : 'border-gray-200 focus:border-secondary bg-gray-50'
                 }`}
-                
                 {...register('senha', {
                   required: 'A senha é obrigatória.',
                   minLength: {
@@ -250,7 +279,6 @@ localStorage.setItem(
                       'A senha deve conter letra maiúscula, minúscula, número e caractere especial.',
                   },
                 })}
-
               />
 
               {errors.senha && (
