@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import Botao from '../../components/Botao/Botao';
 import { chavePorConta } from '../../services/armazenamentoConta';
-import { voucherService } from '../../services/voucherService';
+import { voucherService, type Voucher } from '../../services/voucherService';
 import { historicoService } from '../../services/historicoService';
 
 interface DadosUsuario {
@@ -25,11 +24,8 @@ const carregarDadosUsuario = (): DadosUsuario => {
     console.error('Erro ao recuperar dados do cadastro:', error);
   }
 
-  return {
-    nome: 'EcoViajante',
-  };
+  return { nome: 'EcoViajante' };
 };
-
 
 const carregarSaldo = (): number => {
   try {
@@ -39,7 +35,13 @@ const carregarSaldo = (): number => {
 
     if (saldoSessao) {
       const dados = JSON.parse(saldoSessao);
-      const pontos = Number(dados.greenPointsAcumulados);
+
+      const pontos = Number(
+        dados.greenPointsAcumulados ??
+        dados.greenPoints ??
+        dados.movePoints ??
+        0
+      );
 
       if (Number.isFinite(pontos) && pontos >= 0) {
         return pontos;
@@ -51,7 +53,17 @@ const carregarSaldo = (): number => {
     );
 
     if (saldoLocal !== null) {
-      const pontos = Number(JSON.parse(saldoLocal));
+      const dadosPontos = JSON.parse(saldoLocal);
+
+      const pontos =
+        typeof dadosPontos === 'number'
+          ? dadosPontos
+          : Number(
+              dadosPontos?.greenPointsAcumulados ??
+              dadosPontos?.greenPoints ??
+              dadosPontos?.movePoints ??
+              0
+            );
 
       if (Number.isFinite(pontos) && pontos >= 0) {
         return pontos;
@@ -63,7 +75,6 @@ const carregarSaldo = (): number => {
 
   return 0;
 };
-
 
 type PassagemId = 1 | 2;
 
@@ -109,42 +120,59 @@ interface ConversaoFormData {
   quantidades: number[];
 }
 
+const obterDataISO = (): string => {
+  const hoje = new Date();
+
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+
+  return `${ano}-${mes}-${dia}`;
+};
+
+const carregarHistoricoLocal = (): HistoricoItem[] => {
+  try {
+    const historicoSalvo = localStorage.getItem(
+      chavePorConta('voucherHistorico')
+    );
+
+    if (!historicoSalvo) return [];
+
+    const dados: unknown = JSON.parse(historicoSalvo);
+
+    return Array.isArray(dados)
+      ? dados as HistoricoItem[]
+      : [];
+  } catch (error) {
+    console.error('Erro ao recuperar histórico:', error);
+    return [];
+  }
+};
+
 export default function Conversao() {
   const { control, setValue } = useForm<ConversaoFormData>({
     defaultValues: {
       quantidades: [1, 1],
     },
   });
-  const [dados] = useState<DadosUsuario>(carregarDadosUsuario);
 
+  const [dados] = useState<DadosUsuario>(carregarDadosUsuario);
   const [saldo, setSaldo] = useState<number>(carregarSaldo);
   const [resgatando, setResgatando] = useState(false);
 
   const quantidades = useWatch({
-  control,
-  name: 'quantidades',
-}) ?? [1, 1];
+    control,
+    name: 'quantidades',
+  }) ?? [1, 1];
 
-  const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
-    try {
-      const historicoSalvo = localStorage.getItem(
-    chavePorConta('voucherHistorico')
+  const [historico, setHistorico] = useState<HistoricoItem[]>(
+    carregarHistoricoLocal
   );
 
-    if (!historicoSalvo) {
-      return [];
-    }
-
-    const dados: unknown = JSON.parse(historicoSalvo);
-
-    return Array.isArray(dados) ? dados as HistoricoItem[] : [];
-  } catch (error) {
-    console.error('Erro ao recuperar histórico:', error);
-    return [];
-  }
-});
-
-  const handleQuantidadeChange = (id: PassagemId, value: string) => {
+  const handleQuantidadeChange = (
+    id: PassagemId,
+    value: string
+  ) => {
     let num = parseInt(value, 10);
 
     if (isNaN(num) || num < 1) {
@@ -161,148 +189,304 @@ export default function Conversao() {
     });
   };
 
-  
-const handleResgatar = async (passagem: Passagem) => {
-  if (resgatando) return;
+  const handleResgatar = async (passagem: Passagem) => {
+    if (resgatando) return;
 
-  const qtd = quantidades[passagem.id - 1] ?? 1;
+    const qtd = quantidades[passagem.id - 1] ?? 1;
 
-  if (!Number.isInteger(qtd) || qtd < 1 || qtd > 50) {
-    alert('Informe uma quantidade válida de passagens.');
-    return;
-  }
-
-  const totalCusto = qtd * passagem.custoUnitario;
-  const totalEmReais = qtd * passagem.valorReais;
-
-  if (saldo < totalCusto) {
-    alert('MovePoints insuficientes para realizar a conversão.');
-    return;
-  }
-
-  const numeroCartao = localStorage.getItem('moveupNumeroCartao');
-
-  if (
-    localStorage.getItem('moveupLogado') !== 'true' ||
-    !numeroCartao
-  ) {
-    alert('Faça login para acessar seu cartão.');
-    return;
-  }
-
-  const confirmar = window.confirm(
-    `Confirmar conversão de ${totalCusto} MovePoints em R$ ${totalEmReais.toFixed(2)} de créditos?`
-  );
-
-  if (!confirmar) return;
-
-  setResgatando(true);
-
-  try {
-    const vouchers = await voucherService.listar();
-
-    const voucher = vouchers.find(
-      (item) => item.numeroCartao === numeroCartao
-    );
-
-    if (!voucher || voucher.cdCartao == null) {
-      alert('Não foi possível encontrar seu cartão no Java.');
+    if (!Number.isInteger(qtd) || qtd < 1 || qtd > 50) {
+      alert('Informe uma quantidade válida de passagens.');
       return;
     }
 
-    if (voucher.status !== 'ATIVO') {
-      alert('Seu cartão não está ativo.');
+    const totalCusto = qtd * passagem.custoUnitario;
+
+    const totalEmReais = Number(
+      (qtd * passagem.valorReais).toFixed(2)
+    );
+
+    if (saldo < totalCusto) {
+      alert('MovePoints insuficientes para realizar a conversão.');
       return;
     }
 
-    const novoSaldoCartao = Number(
-      (voucher.saldoDisponivel + totalEmReais).toFixed(2)
+    const numeroCartao = localStorage.getItem('moveupNumeroCartao');
+
+    if (
+      localStorage.getItem('moveupLogado') !== 'true' ||
+      !numeroCartao
+    ) {
+      alert('Faça login para acessar seu cartão.');
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `Confirmar conversão de ${totalCusto} MovePoints em R$ ${totalEmReais.toFixed(2)} de créditos?`
     );
 
-    // Atualiza os créditos do cartão no Java.
-    await voucherService.atualizar(voucher.cdCartao, {
-      numeroCartao: voucher.numeroCartao,
-      titular: voucher.titular,
-      tipo: voucher.tipo,
-      status: voucher.status,
-      saldoDisponivel: novoSaldoCartao,
-    });
+    if (!confirmar) return;
 
-    const novoSaldo = saldo - totalCusto;
+    setResgatando(true);
 
-    // Desconta os MovePoints da conta atual.
-    setSaldo(novoSaldo);
-
-    localStorage.setItem(
-      chavePorConta('greenPointsSaldo'),
-      JSON.stringify(novoSaldo)
-    );
-
-    sessionStorage.setItem(
-      chavePorConta('moveup_saldo'),
-      JSON.stringify({
-        greenPointsAcumulados: novoSaldo,
-      })
-    );
-
-    const novoHistoricoItem: HistoricoItem = {
-      id: crypto.randomUUID(),
-      data: new Date().toLocaleDateString('pt-BR'),
-      transporte: passagem.titulo,
-      quantidade: qtd,
-      pontos: totalCusto,
-      valorReais: totalEmReais,
-    };
-
-    // Salva o histórico individual no React.
-    const novoHistorico = [novoHistoricoItem, ...historico];
-
-    setHistorico(novoHistorico);
-
-    localStorage.setItem(
-      chavePorConta('voucherHistorico'),
-      JSON.stringify(novoHistorico)
-    );
+    let cdCartaoAtualizado: number | null = null;
+    let saldoCartaoAnterior: number | null = null;
+    let idHistoricoCriado: number | null = null;
 
     try {
-      // Registra a conversão no Java.
-      await historicoService.cadastrar({
-        data: new Date().toLocaleDateString('en-CA'),
+      // 1. Consulta os vouchers cadastrados na API Java.
+      const vouchers = await voucherService.listar();
+
+      const voucher = vouchers.find(
+        (item) => item.numeroCartao === numeroCartao
+      );
+
+      if (!voucher || voucher.cdCartao == null) {
+        alert('Não foi possível encontrar seu cartão no Java.');
+        return;
+      }
+
+      if (voucher.status !== 'ATIVO') {
+        alert('Seu cartão não está ativo.');
+        return;
+      }
+
+      const saldoAtualCartao = Number(voucher.saldoDisponivel);
+
+      if (
+        !Number.isFinite(saldoAtualCartao) ||
+        saldoAtualCartao < 0
+      ) {
+        alert('O saldo atual do cartão retornou um valor inválido.');
+        return;
+      }
+
+      saldoCartaoAnterior = saldoAtualCartao;
+
+      const novoSaldoCartao = Number(
+        (saldoAtualCartao + totalEmReais).toFixed(2)
+      );
+
+      const novoSaldoMovePoints = saldo - totalCusto;
+
+      // 2. Atualiza o saldo do cartão no Java.
+      const voucherAtualizado = await voucherService.atualizar(
+        voucher.cdCartao,
+        {
+          numeroCartao: voucher.numeroCartao,
+          titular: voucher.titular,
+          tipo: voucher.tipo,
+          status: voucher.status,
+          saldoDisponivel: novoSaldoCartao,
+        }
+      );
+
+      cdCartaoAtualizado = voucher.cdCartao;
+
+      // Prepara a lista atualizada para o cache da Carteira.
+      const vouchersAtualizados: Voucher[] = vouchers.map((item) =>
+        item.cdCartao === voucher.cdCartao
+          ? voucherAtualizado
+          : item
+      );
+
+      // 3. Registra a conversão no histórico global do Java.
+      try {
+        const registroCriado = await historicoService.cadastrar({
+          data: obterDataISO(),
+          transporte: passagem.titulo,
+          quantidadePassagem: qtd,
+          pontos: totalCusto,
+          status: 'ATIVO',
+        });
+
+        idHistoricoCriado = registroCriado.idHistorico;
+      } catch (error) {
+        console.error('Erro ao registrar histórico no Java:', error);
+
+        try {
+          await voucherService.atualizar(voucher.cdCartao, {
+            numeroCartao: voucher.numeroCartao,
+            titular: voucher.titular,
+            tipo: voucher.tipo,
+            status: voucher.status,
+            saldoDisponivel: saldoCartaoAnterior,
+          });
+
+          cdCartaoAtualizado = null;
+
+          alert(
+            'O histórico não foi registrado. O saldo anterior do cartão foi restaurado. Nenhum MovePoint foi descontado.'
+          );
+        } catch (erroRollback) {
+          console.error(
+            'Não foi possível restaurar o saldo do cartão:',
+            erroRollback
+          );
+
+          alert(
+            'A atualização do cartão foi realizada, mas o histórico falhou e não foi possível restaurar o saldo anterior. Não tente novamente antes de verificar o cartão.'
+          );
+        }
+
+        return;
+      }
+
+      // 4. Prepara o histórico individual da conta atual.
+      const novoHistoricoItem: HistoricoItem = {
+        id: crypto.randomUUID(),
+        data: new Date().toLocaleDateString('pt-BR'),
         transporte: passagem.titulo,
-        quantidadePassagem: qtd,
+        quantidade: qtd,
         pontos: totalCusto,
-        status: 'ATIVO',
-      });
-    } catch (error) {
-      console.error('Erro ao registrar histórico no Java:', error);
+        valorReais: totalEmReais,
+      };
+
+      const novoHistorico = [
+        novoHistoricoItem,
+        ...historico,
+      ];
+
+      // 5. Guarda os valores anteriores para eventual restauração.
+      const chavePontos = chavePorConta('greenPointsSaldo');
+      const chaveSaldo = chavePorConta('moveup_saldo');
+      const chaveHistorico = chavePorConta('voucherHistorico');
+      const chaveVouchers = chavePorConta('moveupVouchers');
+
+      const pontosAnteriores = localStorage.getItem(chavePontos);
+      const saldoSessaoAnterior = sessionStorage.getItem(chaveSaldo);
+      const historicoAnterior = localStorage.getItem(chaveHistorico);
+      const vouchersAnteriores = localStorage.getItem(chaveVouchers);
+
+      try {
+        const dadosSaldo = saldoSessaoAnterior
+          ? JSON.parse(saldoSessaoAnterior)
+          : {};
+
+        // Atualiza os MovePoints.
+        localStorage.setItem(
+          chavePontos,
+          JSON.stringify(novoSaldoMovePoints)
+        );
+
+        sessionStorage.setItem(
+          chaveSaldo,
+          JSON.stringify({
+            ...dadosSaldo,
+            greenPointsAcumulados: novoSaldoMovePoints,
+          })
+        );
+
+        // Atualiza o histórico individual.
+        localStorage.setItem(
+          chaveHistorico,
+          JSON.stringify(novoHistorico)
+        );
+
+        // Atualiza o cache usado pela Carteira.
+        localStorage.setItem(
+          chaveVouchers,
+          JSON.stringify(vouchersAtualizados)
+        );
+      } catch (erroArmazenamento) {
+        console.error(
+          'Erro ao salvar os dados locais da conversão:',
+          erroArmazenamento
+        );
+
+        // Restaura os dados locais anteriores.
+        try {
+          if (pontosAnteriores === null) {
+            localStorage.removeItem(chavePontos);
+          } else {
+            localStorage.setItem(chavePontos, pontosAnteriores);
+          }
+
+          if (saldoSessaoAnterior === null) {
+            sessionStorage.removeItem(chaveSaldo);
+          } else {
+            sessionStorage.setItem(chaveSaldo, saldoSessaoAnterior);
+          }
+
+          if (historicoAnterior === null) {
+            localStorage.removeItem(chaveHistorico);
+          } else {
+            localStorage.setItem(chaveHistorico, historicoAnterior);
+          }
+
+          if (vouchersAnteriores === null) {
+            localStorage.removeItem(chaveVouchers);
+          } else {
+            localStorage.setItem(chaveVouchers, vouchersAnteriores);
+          }
+        } catch (erroRestauracaoLocal) {
+          console.error(
+            'Erro ao restaurar os dados locais:',
+            erroRestauracaoLocal
+          );
+        }
+
+        // Tenta remover o histórico global recém-criado.
+        try {
+          if (idHistoricoCriado !== null) {
+            await historicoService.excluir(idHistoricoCriado);
+          } else {
+            throw new Error(
+              'A API não retornou o identificador do histórico.'
+            );
+          }
+
+          // Restaura o saldo anterior do cartão.
+          await voucherService.atualizar(voucher.cdCartao, {
+            numeroCartao: voucher.numeroCartao,
+            titular: voucher.titular,
+            tipo: voucher.tipo,
+            status: voucher.status,
+            saldoDisponivel: saldoCartaoAnterior,
+          });
+
+          cdCartaoAtualizado = null;
+
+          alert(
+            'Não foi possível salvar a conversão no navegador. O histórico Java foi removido e o saldo do cartão foi restaurado.'
+          );
+        } catch (erroCompensacao) {
+          console.error(
+            'Não foi possível desfazer a conversão na API:',
+            erroCompensacao
+          );
+
+          alert(
+            'Ocorreu uma falha ao salvar os dados locais e não foi possível desfazer todas as operações no Java. Verifique o cartão e o histórico antes de tentar novamente.'
+          );
+        }
+
+        return;
+      }
+
+      // 6. Atualiza a interface após as operações concluídas.
+      setSaldo(novoSaldoMovePoints);
+      setHistorico(novoHistorico);
+
+      setValue(`quantidades.${passagem.id - 1}` as const, 1);
 
       alert(
-        'Os créditos foram aplicados ao cartão, mas o histórico Java não foi confirmado. Não repita a conversão; verifique o registro antes.'
+        `Conversão concluída!\n\nMovePoints utilizados: ${totalCusto}\nCréditos adicionados: R$ ${totalEmReais.toFixed(2)}`
       );
-      return;
+    } catch (error) {
+      console.error('Erro ao realizar conversão:', error);
+
+      alert(
+        'Não foi possível confirmar a conversão. Confira o saldo do cartão e o histórico antes de tentar novamente.'
+      );
+    } finally {
+      setResgatando(false);
     }
+  };
 
-    setValue(`quantidades.${passagem.id - 1}` as const, 1);
-
-    alert(
-      `Conversão concluída!\n\nMovePoints utilizados: ${totalCusto}\nCréditos adicionados: R$ ${totalEmReais.toFixed(2)}`
-    );
-  } catch (error) {
-    console.error('Erro ao realizar conversão:', error);
-
-    alert(
-      'Não foi possível confirmar a conversão. Confira o saldo do cartão antes de tentar novamente.'
-    );
-  } finally {
-    setResgatando(false);
-  }
-};
-    
   return (
     <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-6">
 
       {/* SAUDAÇÃO */}
-
       <section className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-dark mb-1">
           Olá, {dados.nome}!
@@ -314,9 +498,7 @@ const handleResgatar = async (passagem: Passagem) => {
       </section>
 
       {/* TRANSFERIR PONTOS */}
-
       <section className="mb-10">
-
         <div className="text-center mb-10">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mb-3">
             Converter Pontos
@@ -328,7 +510,6 @@ const handleResgatar = async (passagem: Passagem) => {
         </div>
 
         {/* SALDO */}
-
         <section className="bg-linear-to-br from-purple-600 to-blue-700 text-white p-8 rounded-3xl text-center max-w-[400px] mx-auto mb-12 shadow-lg shadow-cyan/20">
           <h3 className="text-white/90 text-lg font-medium mb-2">
             Seus MovePoints
@@ -336,7 +517,6 @@ const handleResgatar = async (passagem: Passagem) => {
 
           <p className="text-4xl sm:text-5xl font-bold">
             {saldo.toLocaleString('pt-BR')}
-
             <span className="text-2xl font-normal opacity-80">
               {' '}pts
             </span>
@@ -344,9 +524,7 @@ const handleResgatar = async (passagem: Passagem) => {
         </section>
 
         {/* CARDS DE PASSAGENS */}
-
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[760px] mx-auto">
-
           {opcoesPassagens.map((passagem) => {
             const qtd = quantidades[passagem.id - 1] ?? 1;
             const total = qtd * passagem.custoUnitario;
@@ -385,7 +563,6 @@ const handleResgatar = async (passagem: Passagem) => {
                       Quantidade:
                     </label>
 
-
                     <Controller
                       control={control}
                       name={`quantidades.${passagem.id - 1}` as const}
@@ -398,13 +575,15 @@ const handleResgatar = async (passagem: Passagem) => {
                           max="50"
                           value={field.value ?? 1}
                           onChange={(e) =>
-                            handleQuantidadeChange(passagem.id, e.target.value)
+                            handleQuantidadeChange(
+                              passagem.id,
+                              e.target.value
+                            )
                           }
                           className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-cyan outline-none"
                         />
                       )}
                     />
-
                   </div>
 
                   <p className="font-bold text-dark mb-2">
@@ -436,14 +615,11 @@ const handleResgatar = async (passagem: Passagem) => {
               </article>
             );
           })}
-
         </section>
       </section>
 
       {/* HISTÓRICO DE GERAÇÃO */}
-
       <section className="bg-white rounded-3xl p-6 sm:p-10 shadow-md mt-12 mb-10">
-
         <h2 className="text-2xl font-bold text-dark mb-2">
           Histórico de Geração
         </h2>
@@ -454,7 +630,6 @@ const handleResgatar = async (passagem: Passagem) => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-
             <thead className="bg-gray-50 text-gray-600 border-b-2 border-gray-100">
               <tr>
                 <th className="py-4 px-4 font-semibold">Data</th>
@@ -481,9 +656,7 @@ const handleResgatar = async (passagem: Passagem) => {
                     key={item.id}
                     className="border-b border-gray-50 bg-[#e6fcf5] transition-colors"
                   >
-                    <td className="py-4 px-4">
-                      {item.data}
-                    </td>
+                    <td className="py-4 px-4">{item.data}</td>
 
                     <td className="py-4 px-4 font-bold">
                       {item.transporte}
@@ -504,18 +677,13 @@ const handleResgatar = async (passagem: Passagem) => {
                 ))
               )}
             </tbody>
-
           </table>
         </div>
       </section>
 
-      {/* SUA MOBILIDADE É NOSSA PRIORIDADE — ÚLTIMA SEÇÃO */}
-
+      {/* SUA MOBILIDADE É NOSSA PRIORIDADE */}
       <section className="bg-gradient-to-r from-dark to-[#2a2f7e] rounded-2xl p-6 sm:p-8 flex items-center gap-6 shadow-lg">
-
-        <span className="text-4xl shrink-0">
-          🛡️
-        </span>
+        <span className="text-4xl shrink-0">🛡️</span>
 
         <div className="flex-1">
           <h2 className="text-lg sm:text-xl font-bold text-white mb-1">
@@ -535,11 +703,10 @@ const handleResgatar = async (passagem: Passagem) => {
         >
           <path
             fillRule="evenodd"
-            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 011.06-.02z"
+            d="M7.21 14.77a.75.75 0 01-.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-.02 1.06z"
             clipRule="evenodd"
           />
         </svg>
-
       </section>
 
     </main>

@@ -21,6 +21,7 @@ export default function Integrantes() {
       nome: 'Isabelle Ferreira Neri Feitoza',
       rm: '573507',
       cargo: 'Analista de Dados',
+      cargoSecundario: 'Desenvolvedora Front-end',
       turma: '1TDSPH',
       foto: fotoIsa,
       github: 'https://github.com/isabelleferreiraa',
@@ -39,6 +40,7 @@ export default function Integrantes() {
       nome: 'Marina Fernandes Gomes Mesquita',
       rm: '571265',
       cargo: 'Especialista em IA',
+      cargoSecundario: 'Desenvolvedora Front-end',
       turma: '1TDSPH',
       foto: fotoMarina,
       github: 'https://github.com/marifernandesgm',
@@ -48,7 +50,6 @@ export default function Integrantes() {
 
   return (
     <main className="max-w-1200px mx-auto px-4 sm:px-8 py-10">
-
       <section className="text-center mb-12">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mb-3">
           Integrantes da Equipe
@@ -59,14 +60,12 @@ export default function Integrantes() {
         </p>
       </section>
 
-        <section className="flex flex-wrap justify-center gap-8 max-w-760px mx-auto">
-
+      <section className="flex flex-wrap justify-center gap-8 max-w-760px mx-auto">
         {equipe.map((integrante, index) => (
-
           <article
             key={index}
-            className="bg-white rounded-3xl p-8 w-full max-w-[320px] text-center shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col items-center">
-
+            className="bg-white rounded-3xl p-8 w-full max-w-[320px] text-center shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col items-center"
+          >
             <div className="w-32 h-32 rounded-full overflow-hidden mb-5 border-4 border-white shadow-md bg-gray-100">
               <img
                 src={integrante.foto}
@@ -87,12 +86,19 @@ export default function Integrantes() {
               RM: {integrante.rm}
             </p>
 
-            <p className="text-gray-500 text-sm mb-6">
+            <p className="text-gray-500 text-sm mb-1">
               {integrante.cargo}
             </p>
 
-            <div className="flex gap-3 w-full mt-auto">
+            {integrante.cargoSecundario && (
+              <p className="text-gray-500 text-sm mb-6">
+                {integrante.cargoSecundario}
+              </p>
+            )}
 
+            {!integrante.cargoSecundario && <div className="mb-6" />}
+
+            <div className="flex gap-3 w-full mt-auto">
               <a
                 href={integrante.github}
                 target="_blank"
@@ -120,15 +126,10 @@ export default function Integrantes() {
                 />
                 LinkedIn
               </a>
-
             </div>
-
           </article>
-
         ))}
-
       </section>
-
     </main>
   );
 }

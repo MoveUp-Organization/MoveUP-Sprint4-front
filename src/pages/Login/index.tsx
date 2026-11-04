@@ -26,79 +26,91 @@ export default function Login() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>();
 
-  
-const onSubmit = async (data: LoginFormData) => {
-  const contaSalva = localStorage.getItem('moveupCadastroDemo');
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      const contasSalvas = localStorage.getItem('moveupCadastroDemo');
 
-  if (!contaSalva) {
-    alert('Conta não encontrada. Faça seu cadastro primeiro.');
-    return;
-  }
+      if (!contasSalvas) {
+        alert('Conta não encontrada. Faça seu cadastro primeiro.');
+        return;
+      }
 
-  try {
-    const conta: ContaLocal = JSON.parse(contaSalva);
+      const dadosSalvos: unknown = JSON.parse(contasSalvas);
 
-    if (data.email.trim().toLowerCase() !== conta.email) {
-      alert('E-mail ou senha incorretos.');
-      return;
+      // Compatibilidade com o formato antigo e com a lista de contas.
+      const contas: ContaLocal[] = Array.isArray(dadosSalvos)
+        ? dadosSalvos
+        : dadosSalvos && typeof dadosSalvos === 'object'
+          ? [dadosSalvos as ContaLocal]
+          : [];
+
+      const emailDigitado = data.email.trim().toLowerCase();
+
+      const conta = contas.find(
+        (item) =>
+          String(item.email ?? '').trim().toLowerCase() === emailDigitado
+      );
+
+      if (!conta) {
+        alert('E-mail ou senha incorretos.');
+        return;
+      }
+
+      const chave = await crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(data.senha),
+        'PBKDF2',
+        false,
+        ['deriveBits']
+      );
+
+      const resultado = await crypto.subtle.deriveBits(
+        {
+          name: 'PBKDF2',
+          salt: new TextEncoder().encode(conta.salt),
+          iterations: 100000,
+          hash: 'SHA-256',
+        },
+        chave,
+        256
+      );
+
+      const verificador = Array.from(
+        new Uint8Array(resultado),
+        (byte) => byte.toString(16).padStart(2, '0')
+      ).join('');
+
+      if (verificador !== conta.verificador) {
+        alert('E-mail ou senha incorretos.');
+        return;
+      }
+
+      // Define a conta que está atualmente logada.
+      localStorage.setItem(
+        'moveupUsuario',
+        JSON.stringify({
+          nome: conta.nome,
+          email: emailDigitado,
+        })
+      );
+
+      localStorage.setItem('moveupNumeroCartao', conta.numeroCartao);
+      localStorage.setItem('moveupLogado', 'true');
+
+      window.dispatchEvent(new Event('loginAtualizado'));
+
+      navigate('/home');
+    } catch (error) {
+      console.error('Erro ao realizar login:', error);
+      alert('Não foi possível realizar o login.');
     }
-
-    const chave = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(data.senha),
-      'PBKDF2',
-      false,
-      ['deriveBits']
-    );
-
-    const resultado = await crypto.subtle.deriveBits(
-      {
-        name: 'PBKDF2',
-        salt: new TextEncoder().encode(conta.salt),
-        iterations: 100000,
-        hash: 'SHA-256',
-      },
-      chave,
-      256
-    );
-
-    const verificador = Array.from(
-      new Uint8Array(resultado),
-      (byte) => byte.toString(16).padStart(2, '0')
-    ).join('');
-
-    if (verificador !== conta.verificador) {
-      alert('E-mail ou senha incorretos.');
-      return;
-    }
-
-    localStorage.setItem(
-      'moveupUsuario',
-      JSON.stringify({
-        nome: conta.nome,
-        email: conta.email,
-      })
-    );
-
-    localStorage.setItem('moveupNumeroCartao', conta.numeroCartao);
-    localStorage.setItem('moveupLogado', 'true');
-
-    window.dispatchEvent(new Event('loginAtualizado'));
-    navigate('/home');
-  } catch (error) {
-    console.error('Erro ao realizar login:', error);
-    alert('Não foi possível realizar o login.');
-  }
-};
-
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
       <section className="w-full max-w-[1100px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-
         <div className="md:w-1/2 min-h-[550px] bg-gradient-to-br from-[#bfdbfe] via-[#c7d2fe] to-[#d8b4fe] p-8 sm:p-12 flex flex-col justify-center items-center text-center">
           <div className="flex flex-col items-center justify-center text-center">
-
             <img
               src={logo}
               alt="Logo MoveUp"
@@ -153,7 +165,6 @@ const onSubmit = async (data: LoginFormData) => {
             noValidate
             className="space-y-5"
           >
-
             <div>
               <label
                 htmlFor="loginEmail"
@@ -189,7 +200,6 @@ const onSubmit = async (data: LoginFormData) => {
                   {errors.email.message}
                 </p>
               )}
-
             </div>
 
             <div>
@@ -212,12 +222,12 @@ const onSubmit = async (data: LoginFormData) => {
                 {...register('senha', {
                   required: 'A senha é obrigatória.',
                   minLength: {
-                    value: 5,
-                    message: 'A senha deve ter pelo menos 5 caracteres.',
+                    value: 8,
+                    message: 'A senha deve ter pelo menos 8 caracteres.',
                   },
                   maxLength: {
-                    value: 30,
-                    message: 'A senha deve ter no máximo 30 caracteres.',
+                    value: 100,
+                    message: 'A senha deve ter no máximo 100 caracteres.',
                   },
                 })}
               />
@@ -227,7 +237,6 @@ const onSubmit = async (data: LoginFormData) => {
                   {errors.senha.message}
                 </p>
               )}
-
             </div>
 
             <button

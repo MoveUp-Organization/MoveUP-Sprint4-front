@@ -38,7 +38,6 @@ export default function Cadastro() {
     const nome = data.nome.trim();
     const email = data.email.trim().toLowerCase();
 
-    // Número fictício de 16 dígitos para o cartão.
     const numeroCartao =
       '99' +
       Array.from(
@@ -47,7 +46,6 @@ export default function Cadastro() {
       ).join('');
 
     try {
-      // Verifica se o e-mail já existe no armazenamento demonstrativo.
       const contasSalvas: ContaLocal[] = JSON.parse(
         localStorage.getItem('moveupCadastroDemo') || '[]'
       );
@@ -61,7 +59,6 @@ export default function Cadastro() {
         return;
       }
 
-      // Cadastra o usuário na API Java.
       await usuarioService.cadastrar({
         nomeUsuario: nome,
         email,
@@ -74,7 +71,6 @@ export default function Cadastro() {
     }
 
     try {
-      // Cria o cartão na API Java.
       await voucherService.cadastrar({
         numeroCartao,
         titular: nome,
@@ -83,7 +79,6 @@ export default function Cadastro() {
         saldoDisponivel: 0,
       });
 
-      // Guarda apenas a referência para o fluxo demonstrativo.
       const salt = crypto.randomUUID();
 
       const chave = await crypto.subtle.importKey(
@@ -110,7 +105,6 @@ export default function Cadastro() {
         (byte) => byte.toString(16).padStart(2, '0')
       ).join('');
 
-      // Recupera os cadastros anteriores e adiciona a nova conta.
       const contasAtualizadas: ContaLocal[] = JSON.parse(
         localStorage.getItem('moveupCadastroDemo') || '[]'
       );
@@ -129,7 +123,6 @@ export default function Cadastro() {
       );
 
       alert('Cadastro e cartão criados com sucesso!');
-
       navigate('/login');
     } catch (error) {
       console.error('Erro ao criar cartão:', error);
@@ -143,7 +136,6 @@ export default function Cadastro() {
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
       <section className="w-full max-w-[1100px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-
         {/* Lado Esquerdo — Logo */}
         <div className="md:w-1/2 min-h-[550px] bg-gradient-to-br from-[#bfdbfe] via-[#c7d2fe] to-[#d8b4fe] p-8 sm:p-12 flex flex-col justify-center items-center text-center">
           <img
@@ -274,10 +266,11 @@ export default function Cadastro() {
                     message: 'A senha deve ter no máximo 100 caracteres.',
                   },
                   pattern: {
-                    value: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!_]).*$/,
+                    value: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9\s])\S{8,100}$/,
                     message:
-                      'A senha deve conter letra maiúscula, minúscula, número e caractere especial.',
+                      'A senha deve conter letra maiúscula, minúscula, número e caractere especial, sem espaços.',
                   },
+                  deps: ['confirmarSenha'],
                 })}
               />
 
