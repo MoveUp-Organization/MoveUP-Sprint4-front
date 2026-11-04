@@ -1,7 +1,10 @@
-// MOVEUP-CONVERSAO-VERIFICADO: arquivo completo revisado em 2026-11-01
+
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import Botao from '../../components/Botao/Botao';
+import { chavePorConta } from '../../services/armazenamentoConta';
+import { voucherService } from '../../services/voucherService';
+import { historicoService } from '../../services/historicoService';
 
 interface DadosUsuario {
   nome: string;
@@ -27,23 +30,40 @@ const carregarDadosUsuario = (): DadosUsuario => {
   };
 };
 
+
 const carregarSaldo = (): number => {
-  const saldoSalvo = localStorage.getItem('greenPointsSaldo');
+  try {
+    const saldoSessao = sessionStorage.getItem(
+      chavePorConta('moveup_saldo')
+    );
 
-  if (saldoSalvo !== null) {
-    const saldoNumerico = Number(saldoSalvo);
+    if (saldoSessao) {
+      const dados = JSON.parse(saldoSessao);
+      const pontos = Number(dados.greenPointsAcumulados);
 
-    if (
-      saldoSalvo.trim() !== '' &&
-      Number.isFinite(saldoNumerico) &&
-      saldoNumerico >= 0
-    ) {
-      return saldoNumerico;
+      if (Number.isFinite(pontos) && pontos >= 0) {
+        return pontos;
+      }
     }
+
+    const saldoLocal = localStorage.getItem(
+      chavePorConta('greenPointsSaldo')
+    );
+
+    if (saldoLocal !== null) {
+      const pontos = Number(JSON.parse(saldoLocal));
+
+      if (Number.isFinite(pontos) && pontos >= 0) {
+        return pontos;
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao carregar MovePoints:', error);
   }
 
-  return 5000;
+  return 0;
 };
+
 
 type PassagemId = 1 | 2;
 
@@ -98,15 +118,18 @@ export default function Conversao() {
   const [dados] = useState<DadosUsuario>(carregarDadosUsuario);
 
   const [saldo, setSaldo] = useState<number>(carregarSaldo);
+  const [resgatando, setResgatando] = useState(false);
 
   const quantidades = useWatch({
   control,
   name: 'quantidades',
 }) ?? [1, 1];
 
-const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
-  try {
-    const historicoSalvo = localStorage.getItem('voucherHistorico');
+  const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
+    try {
+      const historicoSalvo = localStorage.getItem(
+    chavePorConta('voucherHistorico')
+  );
 
     if (!historicoSalvo) {
       return [];
@@ -138,47 +161,92 @@ const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
     });
   };
 
-  const handleResgatar = (passagem: Passagem) => {
-    const qtd = quantidades[passagem.id - 1] ?? 1;
+  
+const handleResgatar = async (passagem: Passagem) => {
+  if (resgatando) return;
 
-    const totalCusto = qtd * passagem.custoUnitario;
-    const totalEmReais = qtd * passagem.valorReais;
+  const qtd = quantidades[passagem.id - 1] ?? 1;
 
-    if (saldo < totalCusto) {
-      alert(
-        `❌ MovePoints insuficientes! Este resgate precisa de ${totalCusto.toLocaleString('pt-BR')} pts. 
-        Você tem apenas ${saldo.toLocaleString('pt-BR')} pts.`
-      );
+  if (!Number.isInteger(qtd) || qtd < 1 || qtd > 50) {
+    alert('Informe uma quantidade válida de passagens.');
+    return;
+  }
 
-      return;
-    }
+  const totalCusto = qtd * passagem.custoUnitario;
+  const totalEmReais = qtd * passagem.valorReais;
 
-    const confirmar = window.confirm(
-      `CONFIRMAÇÃO DE RESGATE:
+  if (saldo < totalCusto) {
+    alert('MovePoints insuficientes para realizar a conversão.');
+    return;
+  }
 
-      Tipo: ${passagem.titulo}
-      Quantidade: ${qtd} passagem(ns)
-      Valor: ${totalEmReais.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-      Total de Pontos: ${totalCusto.toLocaleString('pt-BR')} pts
+  const numeroCartao = localStorage.getItem('moveupNumeroCartao');
 
-      Clique em OK para confirmar o débito.`
+  if (
+    localStorage.getItem('moveupLogado') !== 'true' ||
+    !numeroCartao
+  ) {
+    alert('Faça login para acessar seu cartão.');
+    return;
+  }
+
+  const confirmar = window.confirm(
+    `Confirmar conversão de ${totalCusto} MovePoints em R$ ${totalEmReais.toFixed(2)} de créditos?`
+  );
+
+  if (!confirmar) return;
+
+  setResgatando(true);
+
+  try {
+    const vouchers = await voucherService.listar();
+
+    const voucher = vouchers.find(
+      (item) => item.numeroCartao === numeroCartao
     );
 
-    if (!confirmar) {
+    if (!voucher || voucher.cdCartao == null) {
+      alert('Não foi possível encontrar seu cartão no Java.');
       return;
     }
+
+    if (voucher.status !== 'ATIVO') {
+      alert('Seu cartão não está ativo.');
+      return;
+    }
+
+    const novoSaldoCartao = Number(
+      (voucher.saldoDisponivel + totalEmReais).toFixed(2)
+    );
+
+    // Atualiza os créditos do cartão no Java.
+    await voucherService.atualizar(voucher.cdCartao, {
+      numeroCartao: voucher.numeroCartao,
+      titular: voucher.titular,
+      tipo: voucher.tipo,
+      status: voucher.status,
+      saldoDisponivel: novoSaldoCartao,
+    });
 
     const novoSaldo = saldo - totalCusto;
 
+    // Desconta os MovePoints da conta atual.
     setSaldo(novoSaldo);
 
-    localStorage.setItem('greenPointsSaldo', novoSaldo.toString());
+    localStorage.setItem(
+      chavePorConta('greenPointsSaldo'),
+      JSON.stringify(novoSaldo)
+    );
+
+    sessionStorage.setItem(
+      chavePorConta('moveup_saldo'),
+      JSON.stringify({
+        greenPointsAcumulados: novoSaldo,
+      })
+    );
 
     const novoHistoricoItem: HistoricoItem = {
-      id: Math.random().toString(36).substring(2, 11),
+      id: crypto.randomUUID(),
       data: new Date().toLocaleDateString('pt-BR'),
       transporte: passagem.titulo,
       quantidade: qtd,
@@ -186,32 +254,50 @@ const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
       valorReais: totalEmReais,
     };
 
+    // Salva o histórico individual no React.
     const novoHistorico = [novoHistoricoItem, ...historico];
 
     setHistorico(novoHistorico);
 
     localStorage.setItem(
-      'voucherHistorico',
+      chavePorConta('voucherHistorico'),
       JSON.stringify(novoHistorico)
     );
 
-    setValue(`quantidades.${passagem.id - 1}` as const, 1, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
+    try {
+      // Registra a conversão no Java.
+      await historicoService.cadastrar({
+        data: new Date().toLocaleDateString('en-CA'),
+        transporte: passagem.titulo,
+        quantidadePassagem: qtd,
+        pontos: totalCusto,
+        status: 'ATIVO',
+      });
+    } catch (error) {
+      console.error('Erro ao registrar histórico no Java:', error);
+
+      alert(
+        'Os créditos foram aplicados ao cartão, mas o histórico Java não foi confirmado. Não repita a conversão; verifique o registro antes.'
+      );
+      return;
+    }
+
+    setValue(`quantidades.${passagem.id - 1}` as const, 1);
 
     alert(
-      `✓ Sucesso! Foram creditadas ${qtd} passagem(ns).
-
-      Valor: ${totalEmReais.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-      Pontos utilizados: ${totalCusto.toLocaleString('pt-BR')} pts
-      Saldo restante: ${novoSaldo.toLocaleString('pt-BR')} pts`
+      `Conversão concluída!\n\nMovePoints utilizados: ${totalCusto}\nCréditos adicionados: R$ ${totalEmReais.toFixed(2)}`
     );
-  };
+  } catch (error) {
+    console.error('Erro ao realizar conversão:', error);
 
+    alert(
+      'Não foi possível confirmar a conversão. Confira o saldo do cartão antes de tentar novamente.'
+    );
+  } finally {
+    setResgatando(false);
+  }
+};
+    
   return (
     <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-6">
 
@@ -341,7 +427,8 @@ const [historico, setHistorico] = useState<HistoricoItem[]>(() => {
                 </div>
 
                 <Botao
-                  texto="Resgatar Créditos"
+                  texto={resgatando ? 'Processando...' : 'Resgatar Créditos'}
+                  desabilitado={resgatando}
                   larguraTotal
                   className="bg-cyan hover:bg-[#009ecf] text-dark shadow-[0_3px_10px_rgba(0,194,255,0.2)]"
                   onClick={() => handleResgatar(passagem)}
