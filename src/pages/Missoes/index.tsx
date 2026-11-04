@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   armazenamentoLocalConta,
@@ -123,17 +122,38 @@ const calcularCo2Evitado = (kmPercorrido: number): number => {
   return (co2CarroPorKm - co2TransportePublicoPorKm) * kmPercorrido;
 };
 
+const lerLista = <T,>(chave: string): T[] => {
+  try {
+    const valor = armazenamentoLocalConta.getItem(chave);
+
+    if (!valor) return [];
+
+    const dados: unknown = JSON.parse(valor);
+
+    return Array.isArray(dados) ? (dados as T[]) : [];
+  } catch {
+    return [];
+  }
+};
+
 const carregarMissoes = (): Missao[] => {
   try {
     const salvas = armazenamentoLocalConta.getItem(CHAVE_MISSOES);
 
     if (!salvas) return missoesIniciais;
 
-    const missoesSalvas: Missao[] = JSON.parse(salvas);
+    const missoesSalvas: unknown = JSON.parse(salvas);
+
+    if (!Array.isArray(missoesSalvas)) return missoesIniciais;
 
     return missoesIniciais.map((missao) => {
-      const salva = missoesSalvas.find((item) => item.id === missao.id);
-      return salva ? { ...missao, concluida: salva.concluida } : missao;
+      const salva = missoesSalvas.find(
+        (item: Partial<Missao>) => item.id === missao.id
+      );
+
+      return salva
+        ? { ...missao, concluida: salva.concluida === true }
+        : missao;
     });
   } catch {
     return missoesIniciais;
@@ -147,7 +167,10 @@ const carregarPontos = (): number => {
     if (saldoSalvo) {
       const dados: DadosSaldo = JSON.parse(saldoSalvo);
 
-      if (typeof dados.greenPointsAcumulados === 'number') {
+      if (
+        typeof dados.greenPointsAcumulados === 'number' &&
+        Number.isFinite(dados.greenPointsAcumulados)
+      ) {
         return dados.greenPointsAcumulados;
       }
     }
@@ -155,9 +178,11 @@ const carregarPontos = (): number => {
     const pontosLocais = armazenamentoLocalConta.getItem(CHAVE_PONTOS);
 
     if (pontosLocais) {
-      const pontos = JSON.parse(pontosLocais);
+      const pontos: unknown = JSON.parse(pontosLocais);
 
-      if (typeof pontos === 'number') return pontos;
+      if (typeof pontos === 'number' && Number.isFinite(pontos)) {
+        return pontos;
+      }
     }
 
     return 0;
@@ -166,12 +191,15 @@ const carregarPontos = (): number => {
   }
 };
 
-const salvarPontos = (pontos: number) => {
+const salvarPontos = (pontos: number): void => {
   let saldo: DadosSaldo = {};
 
   try {
     const salvo = armazenamentoSessaoConta.getItem(CHAVE_SALDO);
-    if (salvo) saldo = JSON.parse(salvo);
+
+    if (salvo) {
+      saldo = JSON.parse(salvo);
+    }
   } catch {
     saldo = {};
   }
@@ -191,10 +219,8 @@ const salvarRegistroMobilidade = (
   tipo: string,
   distanciaKm: number,
   co2Evitado: number
-) => {
-  const registros: RegistroMobilidade[] = JSON.parse(
-    armazenamentoLocalConta.getItem(CHAVE_REGISTROS) || '[]'
-  );
+): void => {
+  const registros = lerLista<RegistroMobilidade>(CHAVE_REGISTROS);
 
   registros.push({
     id: `${Date.now()}-${Math.random()}`,
@@ -205,7 +231,10 @@ const salvarRegistroMobilidade = (
     co2Evitado,
   });
 
-  armazenamentoLocalConta.setItem(CHAVE_REGISTROS, JSON.stringify(registros));
+  armazenamentoLocalConta.setItem(
+    CHAVE_REGISTROS,
+    JSON.stringify(registros)
+  );
 };
 
 const salvarAtividade = (
@@ -213,10 +242,8 @@ const salvarAtividade = (
   pontos: number,
   distanciaKm: number,
   co2Evitado: number
-) => {
-  const atividades: Atividade[] = JSON.parse(
-    armazenamentoLocalConta.getItem(CHAVE_ATIVIDADES) || '[]'
-  );
+): void => {
+  const atividades = lerLista<Atividade>(CHAVE_ATIVIDADES);
 
   atividades.unshift({
     id: Date.now(),
@@ -227,7 +254,10 @@ const salvarAtividade = (
     co2Evitado,
   });
 
-  armazenamentoLocalConta.setItem(CHAVE_ATIVIDADES, JSON.stringify(atividades));
+  armazenamentoLocalConta.setItem(
+    CHAVE_ATIVIDADES,
+    JSON.stringify(atividades)
+  );
 };
 
 export default function Missoes() {
@@ -236,56 +266,87 @@ export default function Missoes() {
   const [modal, setModal] = useState<ModalDados | null>(null);
   const [distancia, setDistancia] = useState('');
 
+  const missoesEmProcessamento = useRef<Set<number>>(new Set());
+
   useEffect(() => {
-    armazenamentoLocalConta.setItem(CHAVE_MISSOES, JSON.stringify(missoes));
+    armazenamentoLocalConta.setItem(
+      CHAVE_MISSOES,
+      JSON.stringify(missoes)
+    );
   }, [missoes]);
 
   const finalizarMissao = (
     missao: Missao,
     distanciaKm: number,
     co2Evitado: number
-  ) => {
-    if (missao.concluida) return;
-
-    const novasMissoes = missoes.map((item) =>
-      item.id === missao.id ? { ...item, concluida: true } : item
-    );
-
-    setMissoes(novasMissoes);
-    armazenamentoLocalConta.setItem(CHAVE_MISSOES, JSON.stringify(novasMissoes));
-
-    const novosPontos = movePoints + missao.recompensa;
-
-    setMovePoints(novosPontos);
-    salvarPontos(novosPontos);
-
-    if (distanciaKm > 0) {
-      const tipo = missao.id === 5 ? 'bicicleta' : 'onibus';
-
-      salvarRegistroMobilidade(tipo, distanciaKm, co2Evitado);
+  ): void => {
+    if (
+      missao.concluida ||
+      missoesEmProcessamento.current.has(missao.id)
+    ) {
+      return;
     }
 
-    salvarAtividade(
-      missao.titulo,
-      missao.recompensa,
-      distanciaKm,
-      co2Evitado
-    );
+    missoesEmProcessamento.current.add(missao.id);
 
-    setModal({
-      titulo: missao.titulo,
-      recompensa: missao.recompensa,
-      co2Evitado,
-      distanciaKm,
-    });
+    try {
+      const novasMissoes = missoes.map((item) =>
+        item.id === missao.id
+          ? { ...item, concluida: true }
+          : item
+      );
+
+      const novosPontos = movePoints + missao.recompensa;
+
+      const tipo = missao.id === 5 ? 'bicicleta' : 'onibus';
+
+      if (distanciaKm > 0) {
+        salvarRegistroMobilidade(tipo, distanciaKm, co2Evitado);
+      }
+
+      salvarAtividade(
+        missao.titulo,
+        missao.recompensa,
+        distanciaKm,
+        co2Evitado
+      );
+
+      salvarPontos(novosPontos);
+
+      armazenamentoLocalConta.setItem(
+        CHAVE_MISSOES,
+        JSON.stringify(novasMissoes)
+      );
+
+      setMissoes(novasMissoes);
+      setMovePoints(novosPontos);
+
+      setModal({
+        titulo: missao.titulo,
+        recompensa: missao.recompensa,
+        co2Evitado,
+        distanciaKm,
+      });
+    } catch {
+      window.alert(
+        'Não foi possível concluir a missão. Tente novamente.'
+      );
+    } finally {
+      missoesEmProcessamento.current.delete(missao.id);
+    }
   };
 
-  const concluirMissao = (id: number) => {
+  const concluirMissao = (id: number): void => {
     const missao = missoes.find((item) => item.id === id);
 
-    if (!missao || missao.concluida) return;
+    if (
+      !missao ||
+      missao.concluida ||
+      missoesEmProcessamento.current.has(id)
+    ) {
+      return;
+    }
 
-    // A missão de transporte público exige a distância percorrida.
     if (missao.id === 6) {
       setModal({
         titulo: missao.titulo,
@@ -293,20 +354,19 @@ export default function Missoes() {
         co2Evitado: null,
         distanciaKm: 0,
       });
+
       return;
     }
 
-    // A missão de bicicleta registra os 5 km previstos na descrição.
     if (missao.id === 5) {
       finalizarMissao(missao, 5, 0);
       return;
     }
 
-    // As demais missões não geram distância ou CO₂.
     finalizarMissao(missao, 0, 0);
   };
 
-  const confirmarTransportePublico = () => {
+  const confirmarTransportePublico = (): void => {
     const kmPercorrido = Number(distancia.replace(',', '.'));
 
     if (
@@ -327,7 +387,7 @@ export default function Missoes() {
     setDistancia('');
   };
 
-  const fecharModal = () => {
+  const fecharModal = (): void => {
     setModal(null);
     setDistancia('');
   };
