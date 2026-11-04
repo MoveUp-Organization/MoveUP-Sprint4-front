@@ -2,6 +2,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../img/logo.png';
 import { usuarioService } from '../../services/usuarioService';
+import { voucherService } from '../../services/voucherService';
 
 interface CadastroFormData {
   nome: string;
@@ -26,23 +27,87 @@ export default function Cadastro() {
     name: 'senha',
   });
 
-
-
 const onSubmit = async (data: CadastroFormData) => {
+  const nome = data.nome.trim();
+  const email = data.email.trim().toLowerCase();
+
+  // Número fictício de 16 dígitos para o cartão.
+  const numeroCartao = '99' + Array.from(
+  crypto.getRandomValues(new Uint8Array(14)),
+  (numero) => numero % 10
+).join('');
+
   try {
     await usuarioService.cadastrar({
-      nomeUsuario: data.nome.trim(),
-      email: data.email.trim(),
+      nomeUsuario: nome,
+      email,
       senha: data.senha,
     });
-
-    alert('Cadastro realizado com sucesso!');
-    navigate('/login');
   } catch (error) {
     console.error('Erro ao cadastrar usuário:', error);
-    alert('Não foi possível realizar o cadastro. Tente novamente.');
+    alert('Não foi possível cadastrar o usuário.');
+    return;
+  }
+
+  try {
+    await voucherService.cadastrar({
+      numeroCartao,
+      titular: nome,
+      tipo: 'Bilhete Único MoveUp',
+      status: 'ATIVO',
+      saldoDisponivel: 0,
+    });
+
+    // Guarda apenas a referência para o fluxo demonstrativo.
+
+const salt = crypto.randomUUID();
+
+const chave = await crypto.subtle.importKey(
+  'raw',
+  new TextEncoder().encode(data.senha),
+  'PBKDF2',
+  false,
+  ['deriveBits']
+);
+
+const resultado = await crypto.subtle.deriveBits(
+  {
+    name: 'PBKDF2',
+    salt: new TextEncoder().encode(salt),
+    iterations: 100000,
+    hash: 'SHA-256',
+  },
+  chave,
+  256
+);
+
+const verificador = Array.from(
+  new Uint8Array(resultado),
+  (byte) => byte.toString(16).padStart(2, '0')
+).join('');
+
+localStorage.setItem(
+  'moveupCadastroDemo',
+  JSON.stringify({
+    nome,
+    email,
+    numeroCartao,
+    salt,
+    verificador,
+  })
+);
+
+
+    alert('Cadastro e cartão criados com sucesso!');
+    navigate('/login');
+  } catch (error) {
+    console.error('Erro ao criar cartão:', error);
+    alert(
+      'O usuário foi cadastrado, mas não foi possível concluir o cartão. Não repita o cadastro agora para evitar duplicidade.'
+    );
   }
 };
+
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
