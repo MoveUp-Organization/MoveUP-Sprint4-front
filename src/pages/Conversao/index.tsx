@@ -228,7 +228,6 @@ export default function Conversao() {
 
     setResgatando(true);
 
-    let cdCartaoAtualizado: number | null = null;
     let saldoCartaoAnterior: number | null = null;
     let idHistoricoCriado: number | null = null;
 
@@ -280,8 +279,6 @@ export default function Conversao() {
         }
       );
 
-      cdCartaoAtualizado = voucher.cdCartao;
-
       // Prepara a lista atualizada para o cache da Carteira.
       const vouchersAtualizados: Voucher[] = vouchers.map((item) =>
         item.cdCartao === voucher.cdCartao
@@ -311,8 +308,6 @@ export default function Conversao() {
             status: voucher.status,
             saldoDisponivel: saldoCartaoAnterior,
           });
-
-          cdCartaoAtualizado = null;
 
           alert(
             'O histórico não foi registrado. O saldo anterior do cartão foi restaurado. Nenhum MovePoint foi descontado.'
@@ -443,8 +438,6 @@ export default function Conversao() {
             status: voucher.status,
             saldoDisponivel: saldoCartaoAnterior,
           });
-
-          cdCartaoAtualizado = null;
 
           alert(
             'Não foi possível salvar a conversão no navegador. O histórico Java foi removido e o saldo do cartão foi restaurado.'
