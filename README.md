@@ -95,8 +95,6 @@ Entre as rotas disponíveis estão:
 - `/integrantes`
 - `/faq`
 - `/contato`
-- `/transferir-pontos` (redireciona para `/conversao`)
-- `/historico`
 
 A configuração dessas rotas está centralizada em `src/main.tsx`.
 
@@ -175,6 +173,13 @@ MoveUP-Sprint4-front/
 │   │   └── Sobre/
 │   │       └── index.tsx            # Informações sobre o MoveUP
 │   │
+│   ├── services/                    # Serviços de integração e armazenamento
+│   │   ├── api.ts                   # Configuração das requisições à API REST Java
+│   │   ├── armazenamentoConta.ts    # Chaves de armazenamento por conta
+│   │   ├── historicoService.ts      # Operações de histórico na API
+│   │   ├── usuarioService.ts        # Operações de usuários na API
+│   │   └── voucherService.ts        # Operações de vouchers na API
+│   │
 │   ├── App.tsx                      # Estrutura principal da aplicação
 │   ├── globals.css                  # Estilos globais e Tailwind CSS
 │   └── main.tsx                     # Entrada da aplicação e configuração das rotas
@@ -188,8 +193,15 @@ MoveUP-Sprint4-front/
 ├── tsconfig.app.json                # Configuração TypeScript da aplicação
 ├── tsconfig.json                    # Configuração geral do TypeScript
 ├── tsconfig.node.json               # Configuração TypeScript para o Node
+├── vercel.json                      # Reescrita de rotas SPA para a Vercel
 └── vite.config.ts                   # Configuração do Vite
 ```
+
+---
+
+## Imagens e Ícones do Projeto
+
+A identidade visual inclui o [favicon](./public/favicons/icon_moveup.png), a [logomarca](./src/img/logo.png) e as fotografias dos integrantes na [pasta de imagens](./src/img/). Esses elementos são utilizados nas páginas e na apresentação da equipe.
 
 ---
 
@@ -197,7 +209,7 @@ MoveUP-Sprint4-front/
 
 ### Cadastro e Login
 
-Permite que o usuário realize seu cadastro e posteriormente entre na plataforma para acessar suas funcionalidades.
+Permite cadastrar usuários por meio da API Java e acessar a plataforma com login demonstrativo no navegador. A API atual não possui autenticação de login.
 
 ### Home
 
@@ -217,11 +229,27 @@ O **Meu Cartão** funciona como uma carteira digital, permitindo visualizar info
 
 ### Histórico
 
-Permite consultar movimentações realizadas durante a utilização da plataforma.
+Permite acompanhar as conversões realizadas. O registro das conversões é enviado à API Java; a lista apresentada na interface ainda utiliza armazenamento local e deve ser conferida nos testes finais.
 
 ### Assistente Virtual
 
 O projeto possui o componente **Watson Assistant**, incluído na estrutura principal da aplicação para oferecer suporte e interação com o usuário.
+
+---
+
+## Integração com a API Java
+
+O front-end utiliza `fetch` para consumir a API REST desenvolvida na disciplina de **Domain Driven Design Using Java**. A comunicação é organizada em arquivos da pasta `src/services/`:
+
+- **`api.ts`** — URL-base, envio de requisições HTTP e tratamento de status de resposta;
+- **`usuarioService.ts`** — cadastro e consulta de usuários;
+- **`voucherService.ts`** — cadastro, consulta e atualização dos vouchers/cartões;
+- **`historicoService.ts`** — registro e consulta do histórico de conversões;
+- **`armazenamentoConta.ts`** — armazenamento local separado por conta demonstrativa.
+
+O fluxo previsto é: cadastro de usuário e criação de voucher via API; consulta dos vouchers na carteira; conversão de MovePoints em créditos com atualização de voucher e registro no histórico da API.
+
+**API Java configurada (Render):** [https://moveup-89cd.onrender.com/moveup](https://moveup-89cd.onrender.com/moveup)
 
 ---
 
@@ -247,51 +275,62 @@ Abaixo encontram-se os integrantes responsáveis pelo desenvolvimento do projeto
 
 ---
 
-## Repositório Oficial
+## Como Usar
 
-👉 **GitHub — MoveUP**
+### Links do projeto
 
-[Acessar o repositório oficial do MoveUP](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front)
+| Recurso | Endereço |
+| --- | --- |
+| **Aplicação Web na Vercel** | [https://moveupbr.vercel.app](https://moveupbr.vercel.app) |
+| **API Java no Render** | [https://moveup-89cd.onrender.com/moveup](https://moveup-89cd.onrender.com/moveup) |
+| **Repositório no GitHub** | [MoveUp-Organization/MoveUP-Sprint4-front](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front) |
+| **Vídeo no YouTube** | [Apresentação do MoveUP](https://www.youtube.com/watch?v=TPeZ0DBWI6s) |
 
 ---
 
-## Como Executar Localmente
+### Como executar localmente
 
-### 1. Clone o repositório
+**Pré-requisitos:** Node.js e npm instalados.
 
-```bash
-git clone https://github.com/MoveUp-Organization/MoveUP-Sprint4-front.git
-```
+1. **Clone o repositório e entre na pasta:**
 
-### 2. Acesse a pasta do projeto
+   ```bash
+   git clone https://github.com/MoveUp-Organization/MoveUP-Sprint4-front.git
+   cd MoveUP-Sprint4-front
+   ```
 
-```bash
-cd MoveUP-Sprint4-front
-```
+2. **Instale as dependências:**
 
-### 3. Instale as dependências
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
-```
+3. **Configure a API Java:** crie um arquivo `.env.local` na raiz do projeto com o seguinte conteúdo:
 
-### 4. Execute o projeto
+   ```dotenv
+   VITE_API_URL=https://moveup-89cd.onrender.com/moveup
+   ```
 
-```bash
-npm run dev
-```
+   O `.env.local` é ignorado pelo Git. Não coloque senhas nem tokens privados em variáveis com prefixo `VITE_`, pois elas ficam acessíveis no código do navegador.
 
-O Vite iniciará o servidor de desenvolvimento e disponibilizará a aplicação no endereço informado pelo terminal.
+   **Vercel:** configure a variável `VITE_API_URL` em **Settings → Environment Variables** e faça um novo deploy caso tenha alterado a variável após a publicação.
 
-### 5. Build para produção
+4. **Inicie o ambiente de desenvolvimento:**
 
-Para gerar a versão de produção:
+   ```bash
+   npm run dev
+   ```
 
-```bash
-npm run build
-```
+   Abra o endereço local exibido pelo Vite no terminal.
 
-O projeto também possui scripts configurados para lint e preview.
+5. **Execute as verificações finais:**
+
+   ```bash
+   npm run lint
+   npm run build
+   ```
+
+A aplicação usa login demonstrativo; as ações de cadastro, consulta de vouchers e conversão dependem de uma API Java acessível para funcionar integralmente.
 
 ---
 
@@ -310,21 +349,10 @@ Esses scripts estão definidos no `package.json` do projeto.
 
 ## 📞 Contato
 
-Para dúvidas, sugestões, identificação de problemas ou contribuições, entre em contato com a equipe de desenvolvimento ou abra uma **Issue** diretamente no repositório oficial.
+Para dúvidas, sugestões, identificação de problemas ou contribuições, abra uma **Issue** no GitHub do projeto. Para contato direto com os integrantes, utilize os perfis de **LinkedIn** apresentados na seção [Integrantes & Autores](#-integrantes--autores).
 
-[Abrir uma Issue no repositório do MoveUP no GitHub](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front/issues/new)
-
----
-
-## 🎥 Link do YouTube
-
-[▶️ Assistir ao vídeo de apresentação do MoveUP](https://www.youtube.com/watch?v=TPeZ0DBWI6s)
-
----
-
-## 📄 Documentação de Mudanças do Trabalho e suas Justificativas
-
-[📄 Acessar a documentação das alterações do Front-end](https://docs.google.com/document/d/17UXcrz_gNkan7kRJqvoINle2HtE4Bol6mUDIgFeFCfA/edit?usp=sharing)
+- [Abrir uma Issue no GitHub do MoveUP](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front/issues/new)
+- [Acessar o repositório oficial da equipe](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front)
 
 ---
 

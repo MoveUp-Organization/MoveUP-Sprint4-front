@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { voucherService, type Voucher } from '../../services/voucherService';
@@ -23,20 +22,45 @@ interface RegistroMobilidade {
   co2Evitado?: number;
 }
 
-const carregarDadosCarteira = (): DadosCarteira => {
+// Chave de cache separada por usuário.
+const obterChaveVouchers = () => chavePorConta('moveupVouchers');
 
-const dados: DadosCarteira = {
-  nome: 'EcoViajante',
-  saldo: 0,
-  greenPoints: 0,
-  numeroCartao: '** ** ** 4827',
-  tipoCartao: 'Bilhete Único MoveUp',
-  statusCartao: 'ATIVO',
-  co2Evitado: 0,
-  distanciaPercorrida: 0,
+// Retorna null quando ainda não existe cache.
+// Um array vazio significa que a consulta já foi realizada.
+const carregarVouchersSalvos = (): Voucher[] | null => {
+  try {
+    const dadosSalvos = localStorage.getItem(obterChaveVouchers());
+
+    if (dadosSalvos === null) {
+      return null;
+    }
+
+    const vouchers: unknown = JSON.parse(dadosSalvos);
+
+    if (!Array.isArray(vouchers)) {
+      return null;
+    }
+
+    return vouchers as Voucher[];
+  } catch (error) {
+    console.error('Erro ao carregar vouchers salvos:', error);
+    return null;
+  }
 };
 
-  // Carrega os dados do usuário
+const carregarDadosCarteira = (): DadosCarteira => {
+  const dados: DadosCarteira = {
+    nome: 'EcoViajante',
+    saldo: 0,
+    greenPoints: 0,
+    numeroCartao: '** ** ** 4827',
+    tipoCartao: 'Bilhete Único MoveUp',
+    statusCartao: 'ATIVO',
+    co2Evitado: 0,
+    distanciaPercorrida: 0,
+  };
+
+  // Carrega os dados do usuário.
   try {
     const cadastroSalvo = localStorage.getItem('moveupUsuario');
 
@@ -48,9 +72,11 @@ const dados: DadosCarteira = {
     console.error('Erro ao carregar cadastro:', error);
   }
 
-  // Carrega o saldo e os MovePoints
+  // Carrega o saldo e os MovePoints.
   try {
-    const saldoSalvo = sessionStorage.getItem(chavePorConta('moveup_saldo'));
+    const saldoSalvo = sessionStorage.getItem(
+      chavePorConta('moveup_saldo')
+    );
 
     if (saldoSalvo) {
       const dadosSaldo = JSON.parse(saldoSalvo);
@@ -65,8 +91,10 @@ const dados: DadosCarteira = {
       );
     }
 
-    // Compatibilidade com um saldo de pontos salvo separadamente
-    const pontosSalvos = localStorage.getItem(chavePorConta('greenPointsSaldo'));
+    // Compatibilidade com um saldo de pontos salvo separadamente.
+    const pontosSalvos = localStorage.getItem(
+      chavePorConta('greenPointsSaldo')
+    );
 
     if (pontosSalvos !== null) {
       const pontos = JSON.parse(pontosSalvos);
@@ -86,11 +114,11 @@ const dados: DadosCarteira = {
     console.error('Erro ao carregar saldo e MovePoints:', error);
   }
 
-  // Carrega os registros reais de mobilidade
+  // Carrega os registros reais de mobilidade.
   try {
-      const registrosSalvos = localStorage.getItem(
-        chavePorConta('moveupRegistrosMobilidade')
-      );
+    const registrosSalvos = localStorage.getItem(
+      chavePorConta('moveupRegistrosMobilidade')
+    );
 
     if (registrosSalvos) {
       const registros: RegistroMobilidade[] = JSON.parse(registrosSalvos);
@@ -105,9 +133,8 @@ const dados: DadosCarteira = {
         );
       }, 0);
 
-      // Regra de negócio:
-      // CO₂ evitado = (emissão do carro - emissão do transporte público) x distância
-
+      // CO₂ evitado = (emissão do carro - emissão do transporte público)
+      // x distância.
       const co2Total = registros.reduce((total, registro) => {
         const co2 = Number(registro.co2Evitado ?? 0);
 
@@ -118,7 +145,6 @@ const dados: DadosCarteira = {
 
       dados.distanciaPercorrida = distanciaTotal;
       dados.co2Evitado = co2Total;
-
     }
   } catch (error) {
     console.error(
@@ -139,65 +165,89 @@ export default function MeuCartao() {
     carregarDadosCarteira
   );
 
-const [consultaVouchers, setConsultaVouchers] =
-  useState<number | 'erro' | null>(null);
+  const [vouchers, setVouchers] = useState<Voucher[]>(
+    () => carregarVouchersSalvos() ?? []
+  );
 
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  
+  const [consultaVouchers, setConsultaVouchers] = useState<
+    number | 'erro' | null
+  >(() => {
+    const vouchersSalvos = carregarVouchersSalvos();
 
-const numeroCartaoConta =
-  localStorage.getItem('moveupLogado') === 'true'
-    ? localStorage.getItem('moveupNumeroCartao')
-    : null;
+    return vouchersSalvos === null
+      ? null
+      : vouchersSalvos.length;
+  });
 
-const voucherAtual = numeroCartaoConta
-  ? vouchers.find(
-      (voucher) => voucher.numeroCartao === numeroCartaoConta
-    )
-  : undefined;
+  const numeroCartaoConta =
+    localStorage.getItem('moveupLogado') === 'true'
+      ? localStorage.getItem('moveupNumeroCartao')
+      : null;
 
+  const voucherAtual = numeroCartaoConta
+    ? vouchers.find(
+        (voucher) => voucher.numeroCartao === numeroCartaoConta
+      )
+    : undefined;
 
-useEffect(() => {
-  let ativo = true;
-
-  const carregarVouchers = async () => {
-    try {
-      const vouchers = await voucherService.listar();
-      
-  if (ativo) {
-    setVouchers(vouchers);
-    setConsultaVouchers(vouchers.length);
-  }
-
-    } catch (error) {
-      console.error('Erro ao consultar vouchers:', error);
-
-      if (ativo) {
-        setConsultaVouchers('erro');
-      }
-    }
-  };
-
-  void carregarVouchers();
-
-  return () => {
-    ativo = false;
-  };
-}, []);
-
-  // Atualiza os dados quando a tela recebe foco ou quando o armazenamento muda
+  // Consulta a API somente quando ainda não existe cache para a conta.
   useEffect(() => {
-    
-  const atualizarDados = () => {
-    const idVoucher = Number(import.meta.env.VITE_VOUCHER_ID);
+    let ativo = true;
 
-    // Evita sobrescrever os dados do Java com os dados locais.
-    if (Number.isInteger(idVoucher) && idVoucher > 0) {
-      return;
-    }
+    const carregarVouchers = async () => {
+      const vouchersSalvos = carregarVouchersSalvos();
 
-    setDados(carregarDadosCarteira());
-  };
+      if (vouchersSalvos !== null) {
+        setVouchers(vouchersSalvos);
+        setConsultaVouchers(vouchersSalvos.length);
+        return;
+      }
+
+      try {
+        const resposta = await voucherService.listar();
+
+        if (!ativo) return;
+
+        setVouchers(resposta);
+        setConsultaVouchers(resposta.length);
+
+        // Salva inclusive uma resposta vazia para evitar consultas repetidas.
+        try {
+          localStorage.setItem(
+            obterChaveVouchers(),
+            JSON.stringify(resposta)
+          );
+        } catch (error) {
+          console.error('Erro ao salvar cache de vouchers:', error);
+        }
+      } catch (error) {
+        console.error('Erro ao consultar vouchers:', error);
+
+        if (ativo) {
+          setConsultaVouchers('erro');
+        }
+      }
+    };
+
+    void carregarVouchers();
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  // Atualiza os dados quando a tela recebe foco ou quando o armazenamento muda.
+  useEffect(() => {
+    const atualizarDados = () => {
+      const idVoucher = Number(import.meta.env.VITE_VOUCHER_ID);
+
+      // Evita sobrescrever os dados do Java com os dados locais.
+      if (Number.isInteger(idVoucher) && idVoucher > 0) {
+        return;
+      }
+
+      setDados(carregarDadosCarteira());
+    };
 
     window.addEventListener('focus', atualizarDados);
     window.addEventListener('storage', atualizarDados);
@@ -232,7 +282,6 @@ useEffect(() => {
           Gerencie seu Bilhete MoveUp e sua carteira digital.
         </p>
 
-      
         {consultaVouchers === null ? (
           <p className="text-sm text-gray-500 mt-2">
             Consultando vouchers na API Java...
@@ -240,14 +289,13 @@ useEffect(() => {
         ) : consultaVouchers === 'erro' ? (
           <p className="text-sm text-red-600 mt-2">
             Não foi possível consultar os vouchers.
-            O cartão exibido é ilustrativo.
+            Os dados salvos anteriormente continuam disponíveis.
           </p>
         ) : (
           <p className="text-sm text-gray-500 mt-2">
-            API Java conectada: {consultaVouchers} voucher(s) encontrado(s).
+            Dados da carteira disponíveis: {consultaVouchers} voucher(s).
           </p>
         )}
-
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -284,25 +332,23 @@ useEffect(() => {
               </p>
 
               <p className="text-xl sm:text-2xl font-semibold tracking-[0.18em]">
-                
-              {voucherAtual
-                ? `•••• •••• •••• ${voucherAtual.numeroCartao.slice(-4)}`
-                : dados.numeroCartao}
-
+                {voucherAtual
+                  ? `•••• •••• •••• ${voucherAtual.numeroCartao.slice(-4)}`
+                  : dados.numeroCartao}
               </p>
             </div>
 
             <div className="relative z-10 flex items-end justify-between">
 
-            <div>
-              <p className="text-xs text-white/60 mb-1">
-                TITULAR
-              </p>
+              <div>
+                <p className="text-xs text-white/60 mb-1">
+                  TITULAR
+                </p>
 
-              <p className="font-semibold uppercase">
-                {voucherAtual?.titular ?? dados.nome}
-              </p>
-            </div>
+                <p className="font-semibold uppercase">
+                  {voucherAtual?.titular ?? dados.nome}
+                </p>
+              </div>
 
               <div className="text-right">
                 <p className="text-xs text-white/60 mb-1">
@@ -310,14 +356,15 @@ useEffect(() => {
                 </p>
 
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold">
-                  
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    (voucherAtual?.status ?? dados.statusCartao) === 'ATIVO'
-                      ? 'bg-green-300'
-                      : 'bg-red-300'
-                  }`}
-                />
+
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      (voucherAtual?.status ?? dados.statusCartao) === 'ATIVO'
+                        ? 'bg-green-300'
+                        : 'bg-red-300'
+                    }`}
+                  />
+
                   {(voucherAtual?.status ?? dados.statusCartao) === 'ATIVO'
                     ? 'Ativo'
                     : 'Inativo'}
@@ -376,12 +423,13 @@ useEffect(() => {
 
               {saldoVisivel ? (
                 <p className="text-4xl sm:text-5xl font-extrabold text-dark tracking-tight">
-
-                {(voucherAtual?.saldoDisponivel ?? dados.saldo).toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })}
-
+                  {(voucherAtual?.saldoDisponivel ?? dados.saldo).toLocaleString(
+                    'pt-BR',
+                    {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }
+                  )}
                 </p>
               ) : (
                 <p className="text-4xl sm:text-5xl font-extrabold text-dark tracking-tight">
@@ -526,12 +574,13 @@ useEffect(() => {
                 Situação
               </p>
 
-              <p className={`font-semibold mt-1 ${
+              <p
+                className={`font-semibold mt-1 ${
                   (voucherAtual?.status ?? dados.statusCartao) === 'ATIVO'
                     ? 'text-green-600'
                     : 'text-red-600'
                 }`}
->
+              >
                 {(voucherAtual?.status ?? dados.statusCartao) === 'ATIVO'
                   ? 'Cartão ativo'
                   : 'Cartão inativo'}
@@ -545,7 +594,6 @@ useEffect(() => {
                   : 'bg-red-500'
               }`}
             />
-
           </div>
 
           <div className="flex items-center justify-between p-5">
@@ -555,10 +603,9 @@ useEffect(() => {
               </p>
 
               <p className="font-semibold text-dark mt-1 tracking-wider">
-              {voucherAtual
-                ? `•••• •••• •••• ${voucherAtual.numeroCartao.slice(-4)}`
-                : dados.numeroCartao}
-
+                {voucherAtual
+                  ? `•••• •••• •••• ${voucherAtual.numeroCartao.slice(-4)}`
+                  : dados.numeroCartao}
               </p>
             </div>
 
