@@ -1,6 +1,10 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  armazenamentoLocalConta,
+  armazenamentoSessaoConta,
+} from '../../services/armazenamentoConta';
 
 interface Missao {
   id: number;
@@ -54,7 +58,7 @@ const missoesIniciais: Missao[] = [
     descricao: 'Abra a plataforma hoje para garantir seus pontos de presença.',
     recompensa: 50,
     categoria: 'diaria',
-    concluida: true,
+    concluida: false,
   },
   {
     id: 2,
@@ -121,7 +125,7 @@ const calcularCo2Evitado = (kmPercorrido: number): number => {
 
 const carregarMissoes = (): Missao[] => {
   try {
-    const salvas = localStorage.getItem(CHAVE_MISSOES);
+    const salvas = armazenamentoLocalConta.getItem(CHAVE_MISSOES);
 
     if (!salvas) return missoesIniciais;
 
@@ -138,7 +142,7 @@ const carregarMissoes = (): Missao[] => {
 
 const carregarPontos = (): number => {
   try {
-    const saldoSalvo = sessionStorage.getItem(CHAVE_SALDO);
+    const saldoSalvo = armazenamentoSessaoConta.getItem(CHAVE_SALDO);
 
     if (saldoSalvo) {
       const dados: DadosSaldo = JSON.parse(saldoSalvo);
@@ -148,7 +152,7 @@ const carregarPontos = (): number => {
       }
     }
 
-    const pontosLocais = localStorage.getItem(CHAVE_PONTOS);
+    const pontosLocais = armazenamentoLocalConta.getItem(CHAVE_PONTOS);
 
     if (pontosLocais) {
       const pontos = JSON.parse(pontosLocais);
@@ -156,9 +160,9 @@ const carregarPontos = (): number => {
       if (typeof pontos === 'number') return pontos;
     }
 
-    return 1450;
+    return 0;
   } catch {
-    return 1450;
+    return 0;
   }
 };
 
@@ -166,13 +170,13 @@ const salvarPontos = (pontos: number) => {
   let saldo: DadosSaldo = {};
 
   try {
-    const salvo = sessionStorage.getItem(CHAVE_SALDO);
+    const salvo = armazenamentoSessaoConta.getItem(CHAVE_SALDO);
     if (salvo) saldo = JSON.parse(salvo);
   } catch {
     saldo = {};
   }
 
-  sessionStorage.setItem(
+  armazenamentoSessaoConta.setItem(
     CHAVE_SALDO,
     JSON.stringify({
       ...saldo,
@@ -180,7 +184,7 @@ const salvarPontos = (pontos: number) => {
     })
   );
 
-  localStorage.setItem(CHAVE_PONTOS, JSON.stringify(pontos));
+  armazenamentoLocalConta.setItem(CHAVE_PONTOS, JSON.stringify(pontos));
 };
 
 const salvarRegistroMobilidade = (
@@ -189,7 +193,7 @@ const salvarRegistroMobilidade = (
   co2Evitado: number
 ) => {
   const registros: RegistroMobilidade[] = JSON.parse(
-    localStorage.getItem(CHAVE_REGISTROS) || '[]'
+    armazenamentoLocalConta.getItem(CHAVE_REGISTROS) || '[]'
   );
 
   registros.push({
@@ -201,7 +205,7 @@ const salvarRegistroMobilidade = (
     co2Evitado,
   });
 
-  localStorage.setItem(CHAVE_REGISTROS, JSON.stringify(registros));
+  armazenamentoLocalConta.setItem(CHAVE_REGISTROS, JSON.stringify(registros));
 };
 
 const salvarAtividade = (
@@ -211,7 +215,7 @@ const salvarAtividade = (
   co2Evitado: number
 ) => {
   const atividades: Atividade[] = JSON.parse(
-    localStorage.getItem(CHAVE_ATIVIDADES) || '[]'
+    armazenamentoLocalConta.getItem(CHAVE_ATIVIDADES) || '[]'
   );
 
   atividades.unshift({
@@ -223,7 +227,7 @@ const salvarAtividade = (
     co2Evitado,
   });
 
-  localStorage.setItem(CHAVE_ATIVIDADES, JSON.stringify(atividades));
+  armazenamentoLocalConta.setItem(CHAVE_ATIVIDADES, JSON.stringify(atividades));
 };
 
 export default function Missoes() {
@@ -233,7 +237,7 @@ export default function Missoes() {
   const [distancia, setDistancia] = useState('');
 
   useEffect(() => {
-    localStorage.setItem(CHAVE_MISSOES, JSON.stringify(missoes));
+    armazenamentoLocalConta.setItem(CHAVE_MISSOES, JSON.stringify(missoes));
   }, [missoes]);
 
   const finalizarMissao = (
@@ -248,7 +252,7 @@ export default function Missoes() {
     );
 
     setMissoes(novasMissoes);
-    localStorage.setItem(CHAVE_MISSOES, JSON.stringify(novasMissoes));
+    armazenamentoLocalConta.setItem(CHAVE_MISSOES, JSON.stringify(novasMissoes));
 
     const novosPontos = movePoints + missao.recompensa;
 
