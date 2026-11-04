@@ -9,10 +9,12 @@ interface LoginFormData {
   senha: string;
 }
 
-interface Usuario {
+interface ContaLocal {
   nome: string;
   email: string;
-  senha: string;
+  numeroCartao: string;
+  salt: string;
+  verificador: string;
 }
 
 export default function Login() {
@@ -24,31 +26,71 @@ export default function Login() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>();
 
-  const onSubmit = (data: LoginFormData) => {
-    const usuarioSalvo = localStorage.getItem('moveupUsuario');
+  
+const onSubmit = async (data: LoginFormData) => {
+  const contaSalva = localStorage.getItem('moveupCadastroDemo');
 
-    if (!usuarioSalvo) {
-      alert('Nenhuma conta cadastrada. Cadastre-se primeiro.');
+  if (!contaSalva) {
+    alert('Conta não encontrada. Faça seu cadastro primeiro.');
+    return;
+  }
+
+  try {
+    const conta: ContaLocal = JSON.parse(contaSalva);
+
+    if (data.email.trim().toLowerCase() !== conta.email) {
+      alert('E-mail ou senha incorretos.');
       return;
     }
 
-    try {
-      const usuario: Usuario = JSON.parse(usuarioSalvo);
+    const chave = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(data.senha),
+      'PBKDF2',
+      false,
+      ['deriveBits']
+    );
 
-      if (
-        data.email !== usuario.email ||
-        data.senha !== usuario.senha
-      ) {
-        alert('Email ou senha incorretos.');
-        return;
-      }
-      localStorage.setItem('moveupLogado', 'true');
-      window.dispatchEvent(new Event('loginAtualizado'));
-      navigate('/home');
-    } catch {
-      alert('Ocorreu um erro ao acessar os dados da conta.');
+    const resultado = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt: new TextEncoder().encode(conta.salt),
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      chave,
+      256
+    );
+
+    const verificador = Array.from(
+      new Uint8Array(resultado),
+      (byte) => byte.toString(16).padStart(2, '0')
+    ).join('');
+
+    if (verificador !== conta.verificador) {
+      alert('E-mail ou senha incorretos.');
+      return;
     }
-  };
+
+    localStorage.setItem(
+      'moveupUsuario',
+      JSON.stringify({
+        nome: conta.nome,
+        email: conta.email,
+      })
+    );
+
+    localStorage.setItem('moveupNumeroCartao', conta.numeroCartao);
+    localStorage.setItem('moveupLogado', 'true');
+
+    window.dispatchEvent(new Event('loginAtualizado'));
+    navigate('/home');
+  } catch (error) {
+    console.error('Erro ao realizar login:', error);
+    alert('Não foi possível realizar o login.');
+  }
+};
+
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">

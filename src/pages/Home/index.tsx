@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { chavePorConta } from '../../services/armazenamentoConta';
 
 type TipoTransporte = 'onibus' | 'metro' | 'bicicleta' | 'caminhada';
 
@@ -44,7 +45,9 @@ const CHAVE_MOBILIDADE = 'moveupRegistrosMobilidade';
 
 const carregarMovePoints = (): number => {
   try {
-    const saldoSalvo = sessionStorage.getItem(CHAVE_SALDO);
+    const saldoSalvo = sessionStorage.getItem(
+  chavePorConta(CHAVE_SALDO)
+);
 
     if (saldoSalvo) {
       const dados = JSON.parse(saldoSalvo);
@@ -52,14 +55,13 @@ const carregarMovePoints = (): number => {
       const pontos = Number(
         dados.greenPointsAcumulados ??
         dados.greenPoints ??
-        dados.movePoints ??
-        1450
+        dados.movePoints ?? 0
       );
 
       return Number.isFinite(pontos) ? pontos : 1450;
     }
 
-    const pontosSalvos = localStorage.getItem(CHAVE_PONTOS);
+    const pontosSalvos = localStorage.getItem(chavePorConta(CHAVE_PONTOS));
 
     if (pontosSalvos !== null) {
       const pontos = JSON.parse(pontosSalvos);
@@ -79,16 +81,24 @@ const carregarMovePoints = (): number => {
     // Valor inicial utilizado pelo projeto quando ainda não há saldo salvo.
     const saldoInicial = {
       saldo: 0,
-      greenPointsAcumulados: 1450,
+      greenPointsAcumulados: 0,
     };
 
-    sessionStorage.setItem(CHAVE_SALDO, JSON.stringify(saldoInicial));
-    localStorage.setItem(CHAVE_PONTOS, JSON.stringify(1450));
+      sessionStorage.setItem(
+        chavePorConta(CHAVE_SALDO),
+        JSON.stringify(saldoInicial)
+      );
 
-    return 1450;
+      localStorage.setItem(
+        chavePorConta(CHAVE_PONTOS),
+        JSON.stringify(0)
+      );
+
+
+    return 0;
   } catch (error) {
     console.error('Erro ao carregar MovePoints:', error);
-    return 1450;
+    return 0;
   }
 };
 
@@ -112,7 +122,7 @@ const salvarMovePoints = (pontos: number) => {
 
 const carregarAtividades = (): Atividade[] => {
   try {
-    const atividadesSalvas = localStorage.getItem(CHAVE_ATIVIDADES);
+    const atividadesSalvas = localStorage.getItem(chavePorConta(CHAVE_ATIVIDADES));
 
     return atividadesSalvas ? JSON.parse(atividadesSalvas) : [];
   } catch (error) {
@@ -127,7 +137,7 @@ const carregarMissoes = (): MissaoSemana[] => {
       id: 1,
       titulo: 'Vá de Bike',
       descricao: 'Pedale um total de 10 km nesta semana.',
-      concluida: true,
+      concluida: false,
     },
     {
       id: 2,
@@ -144,7 +154,7 @@ const carregarMissoes = (): MissaoSemana[] => {
   ];
 
   try {
-    const missoesSalvas = localStorage.getItem(CHAVE_MISSOES);
+    const missoesSalvas = localStorage.getItem(chavePorConta(CHAVE_MISSOES));
 
     return missoesSalvas ? JSON.parse(missoesSalvas) : missoesPadrao;
   } catch (error) {
@@ -155,7 +165,10 @@ const carregarMissoes = (): MissaoSemana[] => {
 
 const carregarRegistrosMobilidade = (): RegistroMobilidade[] => {
   try {
-    const registrosSalvos = localStorage.getItem(CHAVE_MOBILIDADE);
+
+const registrosSalvos = localStorage.getItem(
+  chavePorConta(CHAVE_MOBILIDADE)
+);
 
     return registrosSalvos ? JSON.parse(registrosSalvos) : [];
   } catch (error) {
@@ -237,11 +250,18 @@ export default function Home() {
 
   // Salva os dados das missões e atividades sempre que forem atualizados.
   useEffect(() => {
-    localStorage.setItem(CHAVE_MISSOES, JSON.stringify(missoesSemana));
+    localStorage.setItem(
+  chavePorConta(CHAVE_MISSOES),
+  JSON.stringify(missoesSemana)
+);
+
   }, [missoesSemana]);
 
   useEffect(() => {
-    localStorage.setItem(CHAVE_ATIVIDADES, JSON.stringify(atividades));
+    localStorage.setItem(
+  chavePorConta(CHAVE_ATIVIDADES),
+  JSON.stringify(atividades)
+);
   }, [atividades]);
 
   // Atualiza os indicadores com base nos registros salvos.
@@ -316,7 +336,7 @@ export default function Home() {
     const novosRegistros = [...registrosAtuais, novoRegistro];
 
     localStorage.setItem(
-      CHAVE_MOBILIDADE,
+      chavePorConta(CHAVE_MOBILIDADE),
       JSON.stringify(novosRegistros)
     );
 
@@ -361,7 +381,10 @@ export default function Home() {
     );
 
     setMissoesSemana(novasMissoes);
-    localStorage.setItem(CHAVE_MISSOES, JSON.stringify(novasMissoes));
+    localStorage.setItem(
+  chavePorConta(CHAVE_MISSOES),
+  JSON.stringify(novasMissoes)
+);
 
     // Registra a recompensa no histórico de atividades.
     const hoje = new Date().toLocaleDateString('pt-BR');
