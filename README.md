@@ -251,8 +251,6 @@ O fluxo previsto é: cadastro de usuário e criação de voucher via API; consul
 
 **API Java configurada (Render):** [https://moveup-89cd.onrender.com/moveup](https://moveup-89cd.onrender.com/moveup)
 
-> **Limites atuais:** o login e os MovePoints são demonstrativos e usam o armazenamento do navegador. A disponibilidade da API, o vínculo com o banco de dados e as operações de ponta a ponta ainda devem ser validados nos testes finais.
-
 ---
 
 ## 👥 Integrantes & Autores
@@ -288,7 +286,7 @@ Abaixo encontram-se os integrantes responsáveis pelo desenvolvimento do projeto
 | **Repositório no GitHub** | [MoveUp-Organization/MoveUP-Sprint4-front](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front) |
 | **Vídeo no YouTube** | [Apresentação do MoveUP](https://www.youtube.com/watch?v=TPeZ0DBWI6s) |
 
-> Os endereços acima são os configurados/documentados no projeto. Antes da entrega, é necessário testar os links públicos e confirmar que o vídeo corresponde à Sprint 4 e tem duração máxima de três minutos.
+---
 
 ### Como executar localmente
 
