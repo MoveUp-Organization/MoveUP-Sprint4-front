@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { chavePorConta } from '../../services/armazenamentoConta';
 
@@ -46,8 +46,8 @@ const CHAVE_MOBILIDADE = 'moveupRegistrosMobilidade';
 const carregarMovePoints = (): number => {
   try {
     const saldoSalvo = sessionStorage.getItem(
-  chavePorConta(CHAVE_SALDO)
-);
+      chavePorConta(CHAVE_SALDO)
+    );
 
     if (saldoSalvo) {
       const dados = JSON.parse(saldoSalvo);
@@ -55,45 +55,48 @@ const carregarMovePoints = (): number => {
       const pontos = Number(
         dados.greenPointsAcumulados ??
         dados.greenPoints ??
-        dados.movePoints ?? 0
+        dados.movePoints
       );
 
-      return Number.isFinite(pontos) ? pontos : 1450;
-    }
-
-    const pontosSalvos = localStorage.getItem(chavePorConta(CHAVE_PONTOS));
-
-    if (pontosSalvos !== null) {
-      const pontos = JSON.parse(pontosSalvos);
-
-      if (typeof pontos === 'number') {
+      if (Number.isFinite(pontos) && pontos >= 0) {
         return pontos;
       }
-
-      return Number(
-        pontos.greenPointsAcumulados ??
-        pontos.greenPoints ??
-        pontos.movePoints ??
-        1450
-      );
     }
 
-    // Valor inicial utilizado pelo projeto quando ainda não há saldo salvo.
+    const pontosSalvos = localStorage.getItem(
+      chavePorConta(CHAVE_PONTOS)
+    );
+
+    if (pontosSalvos !== null) {
+      const dados = JSON.parse(pontosSalvos);
+
+      const pontos = typeof dados === 'number'
+        ? dados
+        : Number(
+            dados?.greenPointsAcumulados ??
+            dados?.greenPoints ??
+            dados?.movePoints
+          );
+
+      if (Number.isFinite(pontos) && pontos >= 0) {
+        return pontos;
+      }
+    }
+
     const saldoInicial = {
       saldo: 0,
       greenPointsAcumulados: 0,
     };
 
-      sessionStorage.setItem(
-        chavePorConta(CHAVE_SALDO),
-        JSON.stringify(saldoInicial)
-      );
+    sessionStorage.setItem(
+      chavePorConta(CHAVE_SALDO),
+      JSON.stringify(saldoInicial)
+    );
 
-      localStorage.setItem(
-        chavePorConta(CHAVE_PONTOS),
-        JSON.stringify(0)
-      );
-
+    localStorage.setItem(
+      chavePorConta(CHAVE_PONTOS),
+      JSON.stringify(0)
+    );
 
     return 0;
   } catch (error) {
@@ -104,8 +107,13 @@ const carregarMovePoints = (): number => {
 
 const salvarMovePoints = (pontos: number) => {
   try {
-    const saldoAtual = sessionStorage.getItem(CHAVE_SALDO);
-    const dadosSaldo = saldoAtual ? JSON.parse(saldoAtual) : {};
+    const saldoAtual = sessionStorage.getItem(
+      chavePorConta(CHAVE_SALDO)
+    );
+
+    const dadosSaldo = saldoAtual
+      ? JSON.parse(saldoAtual)
+      : {};
 
     const novoSaldo = {
       ...dadosSaldo,
@@ -113,8 +121,15 @@ const salvarMovePoints = (pontos: number) => {
       greenPointsAcumulados: pontos,
     };
 
-    sessionStorage.setItem(CHAVE_SALDO, JSON.stringify(novoSaldo));
-    localStorage.setItem(CHAVE_PONTOS, JSON.stringify(pontos));
+    sessionStorage.setItem(
+      chavePorConta(CHAVE_SALDO),
+      JSON.stringify(novoSaldo)
+    );
+
+    localStorage.setItem(
+      chavePorConta(CHAVE_PONTOS),
+      JSON.stringify(pontos)
+    );
   } catch (error) {
     console.error('Erro ao salvar MovePoints:', error);
   }
@@ -122,7 +137,9 @@ const salvarMovePoints = (pontos: number) => {
 
 const carregarAtividades = (): Atividade[] => {
   try {
-    const atividadesSalvas = localStorage.getItem(chavePorConta(CHAVE_ATIVIDADES));
+    const atividadesSalvas = localStorage.getItem(
+      chavePorConta(CHAVE_ATIVIDADES)
+    );
 
     return atividadesSalvas ? JSON.parse(atividadesSalvas) : [];
   } catch (error) {
@@ -154,7 +171,9 @@ const carregarMissoes = (): MissaoSemana[] => {
   ];
 
   try {
-    const missoesSalvas = localStorage.getItem(chavePorConta(CHAVE_MISSOES));
+    const missoesSalvas = localStorage.getItem(
+      chavePorConta(CHAVE_MISSOES)
+    );
 
     return missoesSalvas ? JSON.parse(missoesSalvas) : missoesPadrao;
   } catch (error) {
@@ -165,10 +184,9 @@ const carregarMissoes = (): MissaoSemana[] => {
 
 const carregarRegistrosMobilidade = (): RegistroMobilidade[] => {
   try {
-
-const registrosSalvos = localStorage.getItem(
-  chavePorConta(CHAVE_MOBILIDADE)
-);
+    const registrosSalvos = localStorage.getItem(
+      chavePorConta(CHAVE_MOBILIDADE)
+    );
 
     return registrosSalvos ? JSON.parse(registrosSalvos) : [];
   } catch (error) {
@@ -248,24 +266,26 @@ export default function Home() {
     document.title = 'MoveUP - Mobilidade Sustentável';
   }, []);
 
-  // Salva os dados das missões e atividades sempre que forem atualizados.
+  // Salva as missões por conta.
   useEffect(() => {
     localStorage.setItem(
-  chavePorConta(CHAVE_MISSOES),
-  JSON.stringify(missoesSemana)
-);
-
+      chavePorConta(CHAVE_MISSOES),
+      JSON.stringify(missoesSemana)
+    );
   }, [missoesSemana]);
 
+  // Salva as atividades por conta.
   useEffect(() => {
     localStorage.setItem(
-  chavePorConta(CHAVE_ATIVIDADES),
-  JSON.stringify(atividades)
-);
+      chavePorConta(CHAVE_ATIVIDADES),
+      JSON.stringify(atividades)
+    );
   }, [atividades]);
 
   // Atualiza os indicadores com base nos registros salvos.
-  const atualizarIndicadoresMobilidade = (registros: RegistroMobilidade[]) => {
+  const atualizarIndicadoresMobilidade = (
+    registros: RegistroMobilidade[]
+  ) => {
     const distanciaTotal = registros.reduce(
       (total, registro) => total + Number(registro.distanciaKm || 0),
       0
@@ -281,7 +301,7 @@ export default function Home() {
   };
 
   const registrarAtividade = (
-    e: React.FormEvent<HTMLFormElement>
+    e: FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
 
@@ -307,7 +327,7 @@ export default function Home() {
       caminhada: '🚶 Caminhada',
     };
 
-    // A fórmula de CO₂ é aplicada somente ao transporte público.
+    // O cálculo de CO₂ é aplicado somente ao transporte público.
     const co2Evitado =
       tipoTransporte === 'onibus' || tipoTransporte === 'metro'
         ? calcularCo2Evitado(km)
@@ -331,7 +351,7 @@ export default function Home() {
       co2Evitado,
     };
 
-    // Salva o registro de mobilidade no armazenamento.
+    // Salva o registro de mobilidade na conta atual.
     const registrosAtuais = carregarRegistrosMobilidade();
     const novosRegistros = [...registrosAtuais, novoRegistro];
 
@@ -366,7 +386,7 @@ export default function Home() {
     const pontosGanhos = pontosMap[id] || 200;
     const novosPontos = movePoints + pontosGanhos;
 
-    // Atualiza e salva os MovePoints.
+    // Atualiza e salva os MovePoints da conta atual.
     setMovePoints(novosPontos);
     salvarMovePoints(novosPontos);
 
@@ -381,10 +401,11 @@ export default function Home() {
     );
 
     setMissoesSemana(novasMissoes);
+
     localStorage.setItem(
-  chavePorConta(CHAVE_MISSOES),
-  JSON.stringify(novasMissoes)
-);
+      chavePorConta(CHAVE_MISSOES),
+      JSON.stringify(novasMissoes)
+    );
 
     // Registra a recompensa no histórico de atividades.
     const hoje = new Date().toLocaleDateString('pt-BR');
