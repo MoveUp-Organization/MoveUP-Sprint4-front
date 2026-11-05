@@ -107,14 +107,15 @@ export default function Login() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
-      <section className="w-full max-w-[1100px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-        <div className="md:w-1/2 min-h-[550px] bg-gradient-to-br from-[#bfdbfe] via-[#c7d2fe] to-[#d8b4fe] p-8 sm:p-12 flex flex-col justify-center items-center text-center">
-          <div className="flex flex-col items-center justify-center text-center">
+    <main className="min-h-screen flex items-center justify-center px-3 sm:px-4 py-6 sm:py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
+      <section className="w-full max-w-[1100px] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+        {/* Lado Esquerdo — Logo */}
+        <div className="w-full md:w-1/2 min-h-[280px] sm:min-h-[350px] md:min-h-[550px] bg-gradient-to-br from-[#bfdbfe] via-[#c7d2fe] to-[#d8b4fe] p-6 sm:p-8 md:p-12 flex flex-col justify-center items-center text-center">
+          <div className="w-full flex flex-col items-center justify-center text-center">
             <img
               src={logo}
               alt="Logo MoveUp"
-              className="w-[600px] max-w-none h-auto mb-6 drop-shadow-lg translate-x-4"
+              className="w-full max-w-[420px] h-auto mb-6 drop-shadow-lg translate-x-0"
             />
 
             <p className="text-[#6b6b72] text-base sm:text-lg leading-relaxed max-w-md">
@@ -123,7 +124,8 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="md:w-1/2 p-8 sm:p-12">
+        {/* Lado Direito — Formulário */}
+        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-12">
           <h1 className="text-3xl font-extrabold text-dark mb-2">
             Login
           </h1>

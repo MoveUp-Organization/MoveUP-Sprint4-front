@@ -292,12 +292,12 @@ export default function MissaoDetalhe() {
 
   if (!missao) {
     return (
-      <main className="max-w-[800px] mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-bold text-dark mb-4">
+      <main className="w-full max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-10 sm:py-16 text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-dark mb-4">
           Missão não encontrada
         </h1>
 
-        <p className="text-gray-500 mb-6">
+        <p className="text-gray-500 mb-6 text-sm sm:text-base break-words">
           A missão com ID "{id}" não existe.
         </p>
 
@@ -410,22 +410,33 @@ export default function MissaoDetalhe() {
   };
 
   return (
-    <main className="max-w-[800px] mx-auto px-4 sm:px-8 py-10">
-      <nav className="mb-6 text-sm text-gray-400">
+    <main className="w-full max-w-[800px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 min-w-0">
+
+      {/* Navegação */}
+      <nav
+        aria-label="Navegação estrutural"
+        className="mb-5 sm:mb-6 text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2 min-w-0"
+      >
         <button
+          type="button"
           onClick={() => navigate('/missoes')}
-          className="hover:text-secondary transition-colors cursor-pointer"
+          className="hover:text-secondary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
         >
           Missões
         </button>
 
-        <span className="mx-2">›</span>
+        <span aria-hidden="true">›</span>
 
-        <span className="text-dark font-medium">{missao.titulo}</span>
+        <span className="text-dark font-medium break-words min-w-0">
+          {missao.titulo}
+        </span>
       </nav>
 
-      <article className="bg-white rounded-2xl p-6 sm:p-10 shadow-lg">
-        <div className="flex flex-wrap items-center gap-3 mb-4">
+      {/* Detalhes da missão */}
+      <article className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 lg:p-10 shadow-lg min-w-0">
+
+        {/* Categorias */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
             {missao.categoria}
           </span>
@@ -439,33 +450,39 @@ export default function MissaoDetalhe() {
           </span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-dark mb-4">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-dark mb-4 break-words">
           {missao.titulo}
         </h1>
 
-        <div className="bg-gradient-to-r from-green/10 to-emerald-50 rounded-xl p-4 mb-6 flex items-center gap-3">
-          <span className="text-3xl">🏆</span>
+        {/* Recompensa */}
+        <div className="bg-gradient-to-r from-green/10 to-emerald-50 rounded-xl p-4 sm:p-5 mb-6 flex items-center gap-3 min-w-0">
+          <span className="text-2xl sm:text-3xl shrink-0">🏆</span>
 
-          <div>
-            <p className="text-sm text-gray-500">Recompensa</p>
-            <p className="text-2xl font-bold text-green">
+          <div className="min-w-0">
+            <p className="text-sm text-gray-500">
+              Recompensa
+            </p>
+
+            <p className="text-xl sm:text-2xl font-bold text-green break-words">
               +{missao.recompensa} pts
             </p>
           </div>
         </div>
 
-        <div className="mb-8">
-          <h2 className="text-lg font-bold text-dark mb-3">
+        {/* Descrição */}
+        <div className="mb-7 sm:mb-8">
+          <h2 className="text-base sm:text-lg font-bold text-dark mb-3">
             Descrição da Missão
           </h2>
 
-          <p className="text-gray-500 leading-relaxed">
+          <p className="text-sm sm:text-base text-gray-500 leading-relaxed break-words">
             {missao.descricaoCompleta}
           </p>
         </div>
 
+        {/* Solicitação de distância */}
         {solicitandoDistancia && (
-          <div className="mb-6 rounded-xl bg-gray-50 p-5">
+          <div className="mb-6 rounded-xl bg-gray-50 p-4 sm:p-5 min-w-0">
             <label
               htmlFor="distancia-transporte"
               className="block text-sm font-semibold text-dark mb-2"
@@ -481,10 +498,14 @@ export default function MissaoDetalhe() {
               value={distancia}
               onChange={(e) => setDistancia(e.target.value)}
               placeholder="Ex.: 15"
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-primary"
+              aria-describedby="ajuda-distancia"
+              className="w-full min-w-0 border-2 border-gray-200 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-base outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
             />
 
-            <p className="text-xs text-gray-500 mt-2">
+            <p
+              id="ajuda-distancia"
+              className="text-xs sm:text-sm text-gray-500 mt-2 leading-relaxed"
+            >
               Informe a distância total simulada para os três dias da missão.
             </p>
 
@@ -496,13 +517,14 @@ export default function MissaoDetalhe() {
                 !Number.isFinite(Number(distancia.replace(',', '.'))) ||
                 Number(distancia.replace(',', '.')) <= 0
               }
-              className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-4 min-h-12 px-4 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-sm sm:text-base font-bold transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Calcular CO₂ e Concluir
             </button>
           </div>
         )}
 
+        {/* Ações */}
         <div className="flex flex-col sm:flex-row gap-3">
           {concluida ? (
             <Botao
@@ -527,26 +549,28 @@ export default function MissaoDetalhe() {
         </div>
       </article>
 
+      {/* Modal de resultado */}
       {modalResultado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-3 sm:px-4 py-4 overflow-y-auto">
+
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-resultado"
-            className="bg-white w-full max-w-md rounded-2xl p-7 shadow-2xl text-center"
+            className="bg-white w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl p-5 sm:p-7 shadow-2xl text-center my-auto"
           >
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
               <span className="text-3xl text-emerald-600">✓</span>
             </div>
 
             <h2
               id="titulo-resultado"
-              className="text-2xl font-extrabold text-dark mb-2"
+              className="text-xl sm:text-2xl font-extrabold text-dark mb-2"
             >
               Missão concluída!
             </h2>
 
-            <p className="text-gray-500 mb-5">
+            <p className="text-sm sm:text-base text-gray-500 mb-5 leading-relaxed">
               Parabéns! Você completou a missão {missao.titulo}.
             </p>
 
@@ -555,30 +579,30 @@ export default function MissaoDetalhe() {
                 Você ganhou
               </p>
 
-              <p className="text-white text-3xl font-extrabold">
+              <p className="text-white text-2xl sm:text-3xl font-extrabold break-words">
                 +{modalResultado.recompensa} MovePoints
               </p>
             </div>
 
             {modalResultado.distanciaKm > 0 && (
               <div className="bg-blue-50 rounded-xl p-4 mb-4">
-                <p className="text-blue-700 font-semibold mb-1">
+                <p className="text-blue-700 font-semibold mb-1 text-sm">
                   Distância registrada
                 </p>
 
-                <p className="text-blue-800 text-2xl font-extrabold">
+                <p className="text-blue-800 text-xl sm:text-2xl font-extrabold">
                   {modalResultado.distanciaKm.toFixed(2)} km
                 </p>
               </div>
             )}
 
             {modalResultado.co2Evitado > 0 && (
-              <div className="bg-emerald-50 rounded-xl p-4 mb-6">
-                <p className="text-emerald-700 font-semibold mb-1">
+              <div className="bg-emerald-50 rounded-xl p-4 mb-5">
+                <p className="text-emerald-700 font-semibold mb-1 text-sm">
                   🌱 CO₂ evitado
                 </p>
 
-                <p className="text-emerald-800 text-2xl font-extrabold">
+                <p className="text-emerald-800 text-xl sm:text-2xl font-extrabold">
                   {modalResultado.co2Evitado.toFixed(2)} kg
                 </p>
               </div>
@@ -587,7 +611,7 @@ export default function MissaoDetalhe() {
             <button
               type="button"
               onClick={() => navigate('/missoes')}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold transition-all hover:opacity-90"
+              className="w-full min-h-12 px-4 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-sm sm:text-base font-bold transition-all hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               Voltar para Missões
             </button>
