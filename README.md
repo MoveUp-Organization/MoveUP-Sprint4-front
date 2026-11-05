@@ -284,7 +284,7 @@ Abaixo encontram-se os integrantes responsáveis pelo desenvolvimento do projeto
 | **Aplicação Web na Vercel** | [https://moveupbr.vercel.app](https://moveupbr.vercel.app) |
 | **API Java no Render** | [https://moveup-89cd.onrender.com/moveup](https://moveup-89cd.onrender.com/moveup) |
 | **Repositório no GitHub** | [MoveUp-Organization/MoveUP-Sprint4-front](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front) |
-| **Vídeo no YouTube** | [Apresentação do MoveUP](https://www.youtube.com/watch?v=TPeZ0DBWI6s) |
+| **Vídeo no YouTube** | [Apresentação do MoveUP](https://www.youtube.com/watch?v=tn9aQxz2CVw) |
 
 ---
 
