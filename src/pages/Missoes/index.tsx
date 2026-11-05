@@ -62,7 +62,8 @@ const missoesIniciais: Missao[] = [
   {
     id: 2,
     titulo: 'Primeiros Passos',
-    descricao: 'Assista ao vídeo de introdução e aprenda a usar nossa plataforma sustentável.',
+    descricao:
+      'Assista ao vídeo de introdução e aprenda a usar nossa plataforma sustentável.',
     recompensa: 150,
     categoria: 'conteudo',
     concluida: false,
@@ -70,7 +71,8 @@ const missoesIniciais: Missao[] = [
   {
     id: 3,
     titulo: 'Perfil Completo',
-    descricao: 'Preencha seus dados de usuário e adicione uma foto de perfil para maior segurança.',
+    descricao:
+      'Preencha seus dados de usuário e adicione uma foto de perfil para maior segurança.',
     recompensa: 300,
     categoria: 'desafio',
     concluida: false,
@@ -78,7 +80,8 @@ const missoesIniciais: Missao[] = [
   {
     id: 4,
     titulo: 'Consciência Verde',
-    descricao: 'Responda corretamente ao quiz semanal sobre reciclagem e descarte sustentável.',
+    descricao:
+      'Responda corretamente ao quiz semanal sobre reciclagem e descarte sustentável.',
     recompensa: 500,
     categoria: 'especial',
     concluida: false,
@@ -86,7 +89,8 @@ const missoesIniciais: Missao[] = [
   {
     id: 5,
     titulo: 'Pedale 5km',
-    descricao: 'Use bicicleta para percorrer pelo menos 5 km em um dia e ganhe pontos extras.',
+    descricao:
+      'Use bicicleta para percorrer pelo menos 5 km em um dia e ganhe pontos extras.',
     recompensa: 200,
     categoria: 'desafio',
     concluida: false,
@@ -94,7 +98,8 @@ const missoesIniciais: Missao[] = [
   {
     id: 6,
     titulo: 'Transporte Público',
-    descricao: 'Utilize o transporte público no trajeto para o trabalho ou escola por 3 dias.',
+    descricao:
+      'Utilize o transporte público no trajeto para o trabalho ou escola por 3 dias.',
     recompensa: 350,
     categoria: 'especial',
     concluida: false,
@@ -393,22 +398,22 @@ export default function Missoes() {
   };
 
   return (
-    <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-10">
-      <section className="text-center mb-10">
+    <main className="w-full max-w-[1200px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <section className="text-center mb-8 sm:mb-10">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-dark mb-3">
           Missões Disponíveis
         </h1>
 
-        <p className="text-gray-500 text-lg">
+        <p className="text-gray-500 text-base sm:text-lg">
           Complete as tarefas abaixo para acumular pontos e subir de nível!
         </p>
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {missoes.map((missao) => (
           <article
             key={missao.id}
-            className="bg-white rounded-2xl p-6 shadow-md flex flex-col justify-between hover:shadow-lg transition-shadow"
+            className="min-w-0 bg-white rounded-2xl p-4 sm:p-6 shadow-md flex flex-col justify-between hover:shadow-lg transition-shadow"
           >
             <div>
               <span
@@ -417,12 +422,12 @@ export default function Missoes() {
                 {labelBadge[missao.categoria]}
               </span>
 
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-bold text-dark">
+              <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                <h2 className="text-lg font-bold text-dark break-words">
                   {missao.titulo}
                 </h2>
 
-                <span className="text-green font-bold text-sm">
+                <span className="text-green font-bold text-sm whitespace-nowrap">
                   +{missao.recompensa} pts
                 </span>
               </div>
@@ -432,7 +437,7 @@ export default function Missoes() {
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col min-[400px]:flex-row gap-2">
               {missao.concluida ? (
                 <button
                   disabled
@@ -444,14 +449,14 @@ export default function Missoes() {
                 <>
                   <button
                     onClick={() => concluirMissao(missao.id)}
-                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-sm transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 cursor-pointer"
+                    className="flex-1 min-w-0 py-2.5 px-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-bold text-sm transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 cursor-pointer"
                   >
                     Concluir Missão
                   </button>
 
                   <Link
                     to={`/missoes/${missao.id}`}
-                    className="py-2.5 px-4 rounded-xl border-2 border-primary text-primary font-bold text-sm transition-colors hover:bg-primary hover:text-white"
+                    className="text-center py-2.5 px-4 rounded-xl border-2 border-primary text-primary font-bold text-sm transition-colors hover:bg-primary hover:text-white"
                   >
                     Detalhes
                   </Link>
@@ -464,14 +469,14 @@ export default function Missoes() {
 
       {modal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-3 sm:px-4 py-4"
           onClick={fecharModal}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-modal"
-            className="bg-white w-full max-w-md rounded-2xl p-7 shadow-2xl text-center"
+            className="bg-white w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-2xl p-5 sm:p-7 shadow-2xl text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -480,7 +485,7 @@ export default function Missoes() {
 
             <h2
               id="titulo-modal"
-              className="text-2xl font-extrabold text-dark mb-2"
+              className="text-xl sm:text-2xl font-extrabold text-dark mb-2"
             >
               {modal.co2Evitado === null &&
               modal.titulo === 'Transporte Público'
@@ -491,7 +496,7 @@ export default function Missoes() {
             {modal.co2Evitado === null &&
             modal.titulo === 'Transporte Público' ? (
               <>
-                <p className="text-gray-500 mb-5">
+                <p className="text-gray-500 mb-5 text-sm sm:text-base">
                   Informe a distância total percorrida nos três dias de
                   transporte público.
                 </p>
@@ -512,7 +517,7 @@ export default function Missoes() {
                     value={distancia}
                     onChange={(e) => setDistancia(e.target.value)}
                     placeholder="Ex.: 15"
-                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-primary"
+                    className="w-full min-w-0 border-2 border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-primary"
                   />
                 </div>
 
@@ -530,7 +535,7 @@ export default function Missoes() {
               </>
             ) : (
               <>
-                <p className="text-gray-500 mb-5">
+                <p className="text-gray-500 mb-5 text-sm sm:text-base">
                   Parabéns! Você completou a missão {modal.titulo}.
                 </p>
 
@@ -539,7 +544,7 @@ export default function Missoes() {
                     Você ganhou
                   </p>
 
-                  <p className="text-white text-3xl font-extrabold">
+                  <p className="text-white text-2xl sm:text-3xl font-extrabold break-words">
                     +{modal.recompensa} MovePoints
                   </p>
                 </div>

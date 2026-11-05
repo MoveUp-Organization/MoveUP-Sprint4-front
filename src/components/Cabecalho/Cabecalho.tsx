@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-
 import logo from '../../img/logo.png';
 
 interface Usuario {
@@ -29,6 +28,7 @@ export default function Cabecalho() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [perfilAberto, setPerfilAberto] = useState(false);
   const [usuario, setUsuario] = useState<Usuario | null>(lerUsuarioSalvo);
+
   const navigate = useNavigate();
 
   const toggleMenu = () => {
@@ -56,15 +56,15 @@ export default function Cabecalho() {
 
   useEffect(() => {
     const atualizarPerfil = () => {
-    carregarUsuario();
-  };
+      carregarUsuario();
+    };
 
-  window.addEventListener('loginAtualizado', atualizarPerfil);
+    window.addEventListener('loginAtualizado', atualizarPerfil);
 
-  return () => {
-    window.removeEventListener('loginAtualizado', atualizarPerfil);
-  };
-}, []);
+    return () => {
+      window.removeEventListener('loginAtualizado', atualizarPerfil);
+    };
+  }, []);
 
   const fazerLogout = () => {
     localStorage.removeItem('moveupLogado');
@@ -93,6 +93,7 @@ export default function Cabecalho() {
             fecharMenu();
             setPerfilAberto(false);
           }}
+          className="shrink-0"
         >
           <img
             src={logo}
@@ -103,8 +104,10 @@ export default function Cabecalho() {
 
         <button
           type="button"
-          className="md:hidden flex flex-col gap-[5px] bg-transparent border-none cursor-pointer p-2"
+          className="xl:hidden flex flex-col gap-[5px] bg-transparent border-none cursor-pointer p-2"
           aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={menuAberto}
+          aria-controls="menu-principal"
           onClick={toggleMenu}
         >
           <span
@@ -127,13 +130,13 @@ export default function Cabecalho() {
         </button>
 
         <ul
-          className={`md:flex md:gap-5 lg:gap-6 md:items-center list-none md:translate-x-12 ${
+          id="menu-principal"
+          className={`list-none xl:flex xl:flex-row xl:items-center xl:gap-3 2xl:gap-5 xl:translate-x-0 ${
             menuAberto
-              ? 'flex flex-col items-center gap-2 w-full mt-3 p-4 bg-white rounded-2xl shadow-lg'
+              ? 'flex flex-col items-center gap-3 w-full mt-3 p-4 bg-white rounded-2xl shadow-lg xl:w-auto xl:mt-0 xl:p-0 xl:shadow-none'
               : 'hidden'
           }`}
         >
-
           <li>
             <NavLink
               to="/inicio"
@@ -252,17 +255,7 @@ export default function Cabecalho() {
             </NavLink>
           </li>
 
-          <li
-            className="
-              relative
-              w-full
-              md:w-auto
-              flex
-              flex-col
-              items-center
-            "
-          >
-
+          <li className="relative w-full xl:w-auto flex flex-col items-center">
             <button
               type="button"
               onClick={() => setPerfilAberto((prev) => !prev)}
@@ -293,9 +286,7 @@ export default function Cabecalho() {
                 fill="currentColor"
                 className="w-5 h-5"
               >
-                <path
-                  d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v1.2c0 .7.5 1.2 1.2 1.2h16.8c.7 0 1.2-.5 1.2-1.2v-1.2c0-3.2-6.4-4.8-9.6-4.8z"
-                />
+                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v1.2c0 .7.5 1.2 1.2 1.2h16.8c.7 0 1.2-.5 1.2-1.2v-1.2c0-3.2-6.4-4.8-9.6-4.8z" />
               </svg>
             </button>
 
@@ -306,7 +297,6 @@ export default function Cabecalho() {
                   mt-3
                   w-[calc(100vw-2rem)]
                   max-w-[320px]
-
                   bg-white
                   rounded-2xl
                   shadow-xl
@@ -314,17 +304,15 @@ export default function Cabecalho() {
                   border-gray-100
                   overflow-hidden
                   z-50
-
-                  md:absolute
-                  md:top-full
-                  md:right-0
-                  md:left-auto
-                  md:mt-3
-                  md:w-72
-                  md:max-w-none
+                  xl:absolute
+                  xl:top-full
+                  xl:right-0
+                  xl:left-auto
+                  xl:mt-3
+                  xl:w-72
+                  xl:max-w-none
                 "
               >
-
                 <div
                   className="
                     bg-gradient-to-r
@@ -355,34 +343,17 @@ export default function Cabecalho() {
                       fill="currentColor"
                       className="w-9 h-9"
                     >
-                      <path
-                        d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v1.2c0 .7.5 1.2 1.2 1.2h16.8c.7 0 1.2-.5 1.2-1.2v-1.2c0-3.2-6.4-4.8-9.6-4.8z"
-                      />
+                      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v1.2c0 .7.5 1.2 1.2 1.2h16.8c.7 0 1.2-.5 1.2-1.2v-1.2c0-3.2-6.4-4.8-9.6-4.8z" />
                     </svg>
                   </div>
                 </div>
 
                 <div className="px-5 py-5 text-center">
-
-                  <p
-                    className="
-                      text-dark
-                      font-extrabold
-                      text-lg
-                      break-words
-                    "
-                  >
+                  <p className="text-dark font-extrabold text-lg break-words">
                     {usuario?.nome || 'Meu perfil'}
                   </p>
 
-                  <p
-                    className="
-                      text-gray-500
-                      text-sm
-                      mt-1
-                      break-all
-                    "
-                  >
+                  <p className="text-gray-500 text-sm mt-1 break-all">
                     {usuario?.email || 'Conta MoveUp'}
                   </p>
 
@@ -408,7 +379,6 @@ export default function Cabecalho() {
                   >
                     Sair
                   </button>
-
                 </div>
               </div>
             )}
