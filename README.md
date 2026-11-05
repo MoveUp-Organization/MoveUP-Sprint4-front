@@ -253,28 +253,6 @@ O fluxo previsto é: cadastro de usuário e criação de voucher via API; consul
 
 ---
 
-## 👥 Integrantes & Autores
-
-Abaixo encontram-se os integrantes responsáveis pelo desenvolvimento do projeto MoveUP:
-
-- <img src="src/img/fotoIsa.png" width="120px" alt="Foto de Isabelle Ferreira"><br>
-  **Isabelle Ferreira Neri Feitoza** — RM 573507 (Analista de Dados) — Turma: 1TDSPH  
-  [LinkedIn](https://www.linkedin.com/in/isabelle-ferreira-8844593ab/) | [GitHub](https://github.com/isabelleferreiraa)
-
-- <img src="src/img/fotoMih.png" width="120px" alt="Foto de Milena Silva"><br>
-  **Milena Silva Conegin** — RM 568923 (Desenvolvedora Back-end) — Turma: 1TDSPH  
-  [LinkedIn](https://www.linkedin.com/in/milena-conegin-996b22269) | [GitHub](https://github.com/MilenaConegin)
-
-- <img src="src/img/fotoEduardo.png" width="120px" alt="Foto de Eduardo Damasio"><br>
-  **Eduardo Damasio Guelere** — RM 569960 (Desenvolvedor Back-end) — Turma: 1TDSPH  
-  [LinkedIn](https://www.linkedin.com/in/eduardo-guelere-0902753b8/) | [GitHub](https://github.com/Eduardoguelere)
-
-- <img src="src/img/fotoMarina.png" width="120px" alt="Foto de Marina Fernandes"><br>
-  **Marina Fernandes Gomes Mesquita** — RM 571265 (Especialista em IA) — Turma: 1TDSPH  
-  [LinkedIn](https://www.linkedin.com/in/marifernandesgm-58460a40a) | [GitHub](https://github.com/marifernandesgm)
-
----
-
 ## Como Usar
 
 ### Links do projeto
@@ -353,6 +331,28 @@ Para dúvidas, sugestões, identificação de problemas ou contribuições, abra
 
 - [Abrir uma Issue no GitHub do MoveUP](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front/issues/new)
 - [Acessar o repositório oficial da equipe](https://github.com/MoveUp-Organization/MoveUP-Sprint4-front)
+
+---
+
+## 👥 Integrantes & Autores
+
+Abaixo encontram-se os integrantes responsáveis pelo desenvolvimento do projeto MoveUP:
+
+- <img src="src/img/fotoIsa.png" width="120px" alt="Foto de Isabelle Ferreira"><br>
+  **Isabelle Ferreira Neri Feitoza** — RM 573507 (Analista de Dados) — Turma: 1TDSPH  
+  [LinkedIn](https://www.linkedin.com/in/isabelle-ferreira-8844593ab/) | [GitHub](https://github.com/isabelleferreiraa)
+
+- <img src="src/img/fotoMih.png" width="120px" alt="Foto de Milena Silva"><br>
+  **Milena Silva Conegin** — RM 568923 (Desenvolvedora Back-end) — Turma: 1TDSPH  
+  [LinkedIn](https://www.linkedin.com/in/milena-conegin-996b22269) | [GitHub](https://github.com/MilenaConegin)
+
+- <img src="src/img/fotoEduardo.png" width="120px" alt="Foto de Eduardo Damasio"><br>
+  **Eduardo Damasio Guelere** — RM 569960 (Desenvolvedor Back-end) — Turma: 1TDSPH  
+  [LinkedIn](https://www.linkedin.com/in/eduardo-guelere-0902753b8/) | [GitHub](https://github.com/Eduardoguelere)
+
+- <img src="src/img/fotoMarina.png" width="120px" alt="Foto de Marina Fernandes"><br>
+  **Marina Fernandes Gomes Mesquita** — RM 571265 (Especialista em IA) — Turma: 1TDSPH  
+  [LinkedIn](https://www.linkedin.com/in/marifernandesgm-58460a40a) | [GitHub](https://github.com/marifernandesgm)
 
 ---
 
