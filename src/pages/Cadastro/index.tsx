@@ -1,3 +1,4 @@
+
 import { useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../img/logo.png';
@@ -34,8 +35,43 @@ export default function Cadastro() {
     name: 'senha',
   });
 
+  const obterContasSalvas = (): ContaLocal[] => {
+    try {
+      const dadosSalvos = localStorage.getItem('moveupCadastroDemo');
+
+      if (!dadosSalvos) {
+        return [];
+      }
+
+      const dados = JSON.parse(dadosSalvos);
+
+      if (!Array.isArray(dados)) {
+        console.warn(
+          'Os dados de moveupCadastroDemo não estão em formato de lista.'
+        );
+        return [];
+      }
+
+      return dados.filter(
+        (conta): conta is ContaLocal =>
+          conta !== null &&
+          typeof conta === 'object' &&
+          typeof conta.nome === 'string' &&
+          typeof conta.email === 'string' &&
+          typeof conta.numeroCartao === 'string' &&
+          typeof conta.salt === 'string' &&
+          typeof conta.verificador === 'string'
+      );
+    } catch (error) {
+      console.error('Erro ao ler os cadastros locais:', error);
+      return [];
+    }
+  };
+
   const onSubmit = async (data: CadastroFormData) => {
-    const nome = data.nome.trim();
+    console.log('ENTROU NO ONSUBMIT');
+
+    const nome = data.nome.trim().replace(/\s+/g, ' ');
     const email = data.email.trim().toLowerCase();
 
     const numeroCartao =
@@ -45,28 +81,41 @@ export default function Cadastro() {
         (numero) => numero % 10
       ).join('');
 
+    const contasSalvas = obterContasSalvas();
+
+    const emailJaCadastrado = contasSalvas.some(
+      (conta) => conta.email.trim().toLowerCase() === email
+    );
+
+    if (emailJaCadastrado) {
+      alert(
+        'Este e-mail já possui um cadastro demonstrativo neste navegador.'
+      );
+      return;
+    }
+
     try {
-      const contasSalvas: ContaLocal[] = JSON.parse(
-        localStorage.getItem('moveupCadastroDemo') || '[]'
-      );
+      console.log('VAI CHAMAR A API');
 
-      const emailJaCadastrado = contasSalvas.some(
-        (conta) => conta.email.trim().toLowerCase() === email
-      );
-
-      if (emailJaCadastrado) {
-        alert('Este e-mail já possui um cadastro demonstrativo neste navegador.');
-        return;
-      }
-
-      await usuarioService.cadastrar({
+      const usuarioCriado = await usuarioService.cadastrar({
         nomeUsuario: nome,
         email,
         senha: data.senha,
       });
+
+      console.log('API RESPONDEU COM SUCESSO:', {
+        idUsuario: usuarioCriado?.idUsuario,
+        email: usuarioCriado?.email,
+      });
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error);
-      alert('Não foi possível cadastrar o usuário.');
+
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : 'Erro desconhecido ao cadastrar usuário.';
+
+      alert(`Não foi possível cadastrar o usuário: ${mensagem}`);
       return;
     }
 
@@ -105,9 +154,7 @@ export default function Cadastro() {
         (byte) => byte.toString(16).padStart(2, '0')
       ).join('');
 
-      const contasAtualizadas: ContaLocal[] = JSON.parse(
-        localStorage.getItem('moveupCadastroDemo') || '[]'
-      );
+      const contasAtualizadas = obterContasSalvas();
 
       contasAtualizadas.push({
         nome,
@@ -127,35 +174,46 @@ export default function Cadastro() {
     } catch (error) {
       console.error('Erro ao criar cartão:', error);
 
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : 'Erro desconhecido ao criar cartão.';
+
       alert(
-        'O usuário foi cadastrado, mas não foi possível concluir o cartão. Não repita o cadastro agora para evitar duplicidade.'
+        `O usuário foi cadastrado, mas não foi possível concluir a criação do cartão: ${mensagem}. Não repita o cadastro agora para evitar duplicidade.`
       );
     }
   };
 
+  const onValidationError = (erros: typeof errors) => {
+    console.error('Erros de validação:', erros);
+  };
+
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
-      <section className="w-full max-w-[1100px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+    <main className="min-h-screen flex items-center justify-center px-3 sm:px-4 py-6 sm:py-12 bg-gradient-to-br from-[#dbeafe] via-[#e0e7ff] to-[#ddd6fe]">
+      <section className="w-full max-w-[1100px] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
         {/* Lado Esquerdo — Logo */}
-        <div className="md:w-1/2 min-h-[550px] bg-gradient-to-br from-[#bfdbfe] via-[#c7d2fe] to-[#d8b4fe] p-8 sm:p-12 flex flex-col justify-center items-center text-center">
+        <div className="w-full md:w-1/2 min-h-[280px] sm:min-h-[350px] md:min-h-[550px] bg-gradient-to-br from-[#bfdbfe] via-[#c7d2fe] to-[#d8b4fe] p-6 sm:p-8 md:p-12 flex flex-col justify-center items-center text-center">
           <img
             src={logo}
             alt="Logo MoveUp"
-            className="w-[600px] max-w-none h-auto mb-6 drop-shadow-lg translate-x-4"
+            className="w-full max-w-[420px] h-auto mb-6 drop-shadow-lg translate-x-0"
           />
 
           <p className="text-[#6b6b72] text-base sm:text-lg leading-relaxed max-w-md">
-            Crie sua conta para acessar a plataforma e começar a acumular MovePoints.
+            Crie sua conta para acessar a plataforma e começar a acumular
+            MovePoints.
           </p>
         </div>
 
-        <div className="md:w-1/2 p-8 sm:p-12">
+        {/* Lado Direito — Formulário */}
+        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-12">
           <h1 className="text-3xl font-extrabold text-dark mb-6">
             Criar Conta
           </h1>
 
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(onSubmit, onValidationError)}
             noValidate
             className="space-y-4"
           >
@@ -266,7 +324,8 @@ export default function Cadastro() {
                     message: 'A senha deve ter no máximo 100 caracteres.',
                   },
                   pattern: {
-                    value: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9\s])\S{8,100}$/,
+                    value:
+                      /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9\s])\S{8,100}$/,
                     message:
                       'A senha deve conter letra maiúscula, minúscula, número e caractere especial, sem espaços.',
                   },

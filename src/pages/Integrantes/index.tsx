@@ -1,3 +1,4 @@
+
 import fotoEduardo from '../../img/fotoEduardo.png';
 import fotoIsa from '../../img/fotoIsa.png';
 import fotoMih from '../../img/fotoMih.png';
@@ -49,24 +50,24 @@ export default function Integrantes() {
   ];
 
   return (
-    <main className="max-w-1200px mx-auto px-4 sm:px-8 py-10">
-      <section className="text-center mb-12">
+    <main className="w-full max-w-[1200px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <section className="text-center mb-8 sm:mb-12">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mb-3">
           Integrantes da Equipe
         </h2>
 
-        <p className="text-gray-500 text-lg">
+        <p className="text-gray-500 text-base sm:text-lg">
           Conheça os membros responsáveis pelo projeto MoveUp.
         </p>
       </section>
 
-      <section className="flex flex-wrap justify-center gap-8 max-w-760px mx-auto">
-        {equipe.map((integrante, index) => (
+      <section className="flex flex-wrap justify-center items-stretch gap-5 sm:gap-8 max-w-[760px] mx-auto">
+        {equipe.map((integrante) => (
           <article
-            key={index}
-            className="bg-white rounded-3xl p-8 w-full max-w-[320px] text-center shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col items-center"
+            key={integrante.rm}
+            className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-[320px] min-h-[440px] text-center shadow-lg transition-transform duration-300 hover:-translate-y-2 hover:shadow-xl flex flex-col items-center"
           >
-            <div className="w-32 h-32 rounded-full overflow-hidden mb-5 border-4 border-white shadow-md bg-gray-100">
+            <div className="w-32 h-32 shrink-0 rounded-full overflow-hidden mb-5 border-4 border-white shadow-md bg-gray-100">
               <img
                 src={integrante.foto}
                 alt={`Foto de ${integrante.nome}`}
@@ -78,7 +79,7 @@ export default function Integrantes() {
               {integrante.turma}
             </p>
 
-            <h3 className="text-xl font-bold text-dark mb-1 h-50px flex items-center justify-center">
+            <h3 className="text-xl font-bold text-dark mb-1 min-h-[60px] flex items-center justify-center break-words">
               {integrante.nome}
             </h3>
 
@@ -90,25 +91,26 @@ export default function Integrantes() {
               {integrante.cargo}
             </p>
 
-            {integrante.cargoSecundario && (
+            {integrante.cargoSecundario ? (
               <p className="text-gray-500 text-sm mb-6">
                 {integrante.cargoSecundario}
               </p>
+            ) : (
+              <div className="mb-6" />
             )}
-
-            {!integrante.cargoSecundario && <div className="mb-6" />}
 
             <div className="flex gap-3 w-full mt-auto">
               <a
                 href={integrante.github}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-2 rounded-xl bg-gray-800 text-white font-bold text-sm hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+                aria-label={`GitHub de ${integrante.nome}`}
+                className="flex-1 min-w-0 py-2 px-2 rounded-xl bg-gray-800 text-white font-bold text-sm hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
               >
                 <img
                   src={githubIcon}
-                  alt="GitHub"
-                  className="w-5 h-5 object-contain"
+                  alt=""
+                  className="w-5 h-5 shrink-0 object-contain"
                 />
                 GitHub
               </a>
@@ -117,12 +119,13 @@ export default function Integrantes() {
                 href={integrante.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-2 rounded-xl bg-[#0077b5] text-white font-bold text-sm hover:bg-[#005e93] transition-colors flex items-center justify-center gap-2"
+                aria-label={`LinkedIn de ${integrante.nome}`}
+                className="flex-1 min-w-0 py-2 px-2 rounded-xl bg-[#0077b5] text-white font-bold text-sm hover:bg-[#005e93] transition-colors flex items-center justify-center gap-2"
               >
                 <img
                   src={linkedinIcon}
-                  alt="LinkedIn"
-                  className="w-5 h-5 object-contain"
+                  alt=""
+                  className="w-5 h-5 shrink-0 object-contain"
                 />
                 LinkedIn
               </a>

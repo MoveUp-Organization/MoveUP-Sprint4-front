@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import Botao from '../../components/Botao/Botao';
 import { chavePorConta } from '../../services/armazenamentoConta';
 import { voucherService, type Voucher } from '../../services/voucherService';
@@ -160,10 +161,7 @@ export default function Conversao() {
   const [saldo, setSaldo] = useState<number>(carregarSaldo);
   const [resgatando, setResgatando] = useState(false);
 
-  const quantidades = useWatch({
-    control,
-    name: 'quantidades',
-  }) ?? [1, 1];
+  const [quantidades, setQuantidades] = useState<number[]>([1, 1]);
 
   const [historico, setHistorico] = useState<HistoricoItem[]>(
     carregarHistoricoLocal
@@ -186,6 +184,12 @@ export default function Conversao() {
     setValue(`quantidades.${id - 1}` as const, num, {
       shouldDirty: true,
       shouldValidate: true,
+    });
+
+    setQuantidades((prev) => {
+      const novasQuantidades = [...prev];
+      novasQuantidades[id - 1] = num;
+      return novasQuantidades;
     });
   };
 
@@ -232,7 +236,6 @@ export default function Conversao() {
     let idHistoricoCriado: number | null = null;
 
     try {
-      // 1. Consulta os vouchers cadastrados na API Java.
       const vouchers = await voucherService.listar();
 
       const voucher = vouchers.find(
@@ -267,7 +270,6 @@ export default function Conversao() {
 
       const novoSaldoMovePoints = saldo - totalCusto;
 
-      // 2. Atualiza o saldo do cartão no Java.
       const voucherAtualizado = await voucherService.atualizar(
         voucher.cdCartao,
         {
@@ -279,14 +281,12 @@ export default function Conversao() {
         }
       );
 
-      // Prepara a lista atualizada para o cache da Carteira.
       const vouchersAtualizados: Voucher[] = vouchers.map((item) =>
         item.cdCartao === voucher.cdCartao
           ? voucherAtualizado
           : item
       );
 
-      // 3. Registra a conversão no histórico global do Java.
       try {
         const registroCriado = await historicoService.cadastrar({
           data: obterDataISO(),
@@ -326,7 +326,6 @@ export default function Conversao() {
         return;
       }
 
-      // 4. Prepara o histórico individual da conta atual.
       const novoHistoricoItem: HistoricoItem = {
         id: crypto.randomUUID(),
         data: new Date().toLocaleDateString('pt-BR'),
@@ -341,7 +340,6 @@ export default function Conversao() {
         ...historico,
       ];
 
-      // 5. Guarda os valores anteriores para eventual restauração.
       const chavePontos = chavePorConta('greenPointsSaldo');
       const chaveSaldo = chavePorConta('moveup_saldo');
       const chaveHistorico = chavePorConta('voucherHistorico');
@@ -357,7 +355,6 @@ export default function Conversao() {
           ? JSON.parse(saldoSessaoAnterior)
           : {};
 
-        // Atualiza os MovePoints.
         localStorage.setItem(
           chavePontos,
           JSON.stringify(novoSaldoMovePoints)
@@ -371,13 +368,11 @@ export default function Conversao() {
           })
         );
 
-        // Atualiza o histórico individual.
         localStorage.setItem(
           chaveHistorico,
           JSON.stringify(novoHistorico)
         );
 
-        // Atualiza o cache usado pela Carteira.
         localStorage.setItem(
           chaveVouchers,
           JSON.stringify(vouchersAtualizados)
@@ -388,7 +383,6 @@ export default function Conversao() {
           erroArmazenamento
         );
 
-        // Restaura os dados locais anteriores.
         try {
           if (pontosAnteriores === null) {
             localStorage.removeItem(chavePontos);
@@ -420,7 +414,6 @@ export default function Conversao() {
           );
         }
 
-        // Tenta remover o histórico global recém-criado.
         try {
           if (idHistoricoCriado !== null) {
             await historicoService.excluir(idHistoricoCriado);
@@ -430,7 +423,6 @@ export default function Conversao() {
             );
           }
 
-          // Restaura o saldo anterior do cartão.
           await voucherService.atualizar(voucher.cdCartao, {
             numeroCartao: voucher.numeroCartao,
             titular: voucher.titular,
@@ -456,11 +448,16 @@ export default function Conversao() {
         return;
       }
 
-      // 6. Atualiza a interface após as operações concluídas.
       setSaldo(novoSaldoMovePoints);
       setHistorico(novoHistorico);
 
       setValue(`quantidades.${passagem.id - 1}` as const, 1);
+
+      setQuantidades((prev) => {
+        const novasQuantidades = [...prev];
+        novasQuantidades[passagem.id - 1] = 1;
+        return novasQuantidades;
+      });
 
       alert(
         `Conversão concluída!\n\nMovePoints utilizados: ${totalCusto}\nCréditos adicionados: R$ ${totalEmReais.toFixed(2)}`
@@ -477,47 +474,46 @@ export default function Conversao() {
   };
 
   return (
-    <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-6">
-
-      {/* SAUDAÇÃO */}
-      <section className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-dark mb-1">
+    <main className="w-full max-w-[1200px] mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-6">
+      {/* Saudação */}
+      <section className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-dark mb-1 break-words">
           Olá, {dados.nome}!
         </h1>
 
-        <p className="text-gray-500 text-base sm:text-lg">
+        <p className="text-sm sm:text-base lg:text-lg text-gray-500 leading-relaxed">
           Gerencie sua mobilidade de forma simples e sustentável.
         </p>
       </section>
 
-      {/* TRANSFERIR PONTOS */}
-      <section className="mb-10">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-dark mb-3">
+      {/* Transferir pontos */}
+      <section className="mb-8 sm:mb-10">
+        <div className="text-center mb-7 sm:mb-10">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-dark mb-3">
             Converter Pontos
           </h2>
 
-          <p className="text-gray-500 text-lg">
+          <p className="text-sm sm:text-base lg:text-lg text-gray-500 leading-relaxed max-w-[650px] mx-auto">
             Converta seus MovePoints em créditos para seu cartão de transporte.
           </p>
         </div>
 
-        {/* SALDO */}
-        <section className="bg-linear-to-br from-purple-600 to-blue-700 text-white p-8 rounded-3xl text-center max-w-[400px] mx-auto mb-12 shadow-lg shadow-cyan/20">
-          <h3 className="text-white/90 text-lg font-medium mb-2">
+        {/* Saldo */}
+        <section className="w-full max-w-[400px] mx-auto bg-gradient-to-br from-purple-600 to-blue-700 text-white p-5 sm:p-8 rounded-3xl text-center mb-8 sm:mb-12 shadow-lg shadow-cyan/20">
+          <h3 className="text-base sm:text-lg text-white/90 font-medium mb-2">
             Seus MovePoints
           </h3>
 
-          <p className="text-4xl sm:text-5xl font-bold">
+          <p className="text-3xl sm:text-5xl font-bold break-words">
             {saldo.toLocaleString('pt-BR')}
-            <span className="text-2xl font-normal opacity-80">
+            <span className="text-xl sm:text-2xl font-normal opacity-80">
               {' '}pts
             </span>
           </p>
         </section>
 
-        {/* CARDS DE PASSAGENS */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-[760px] mx-auto">
+        {/* Cards de passagens */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-[760px] mx-auto">
           {opcoesPassagens.map((passagem) => {
             const qtd = quantidades[passagem.id - 1] ?? 1;
             const total = qtd * passagem.custoUnitario;
@@ -526,29 +522,29 @@ export default function Conversao() {
             return (
               <article
                 key={passagem.id}
-                className="bg-white p-8 rounded-3xl shadow-md text-center flex flex-col justify-between"
+                className="min-w-0 bg-white p-5 sm:p-8 rounded-3xl shadow-md text-center flex flex-col justify-between"
               >
                 <div>
-                  <h3 className="text-xl font-bold text-dark mb-3">
+                  <h3 className="text-lg sm:text-xl font-bold text-dark mb-3 break-words">
                     {passagem.titulo}
                   </h3>
 
-                  <p className="text-gray-500 mb-2">
+                  <p className="text-sm sm:text-base text-gray-500 mb-2">
                     Valor da passagem:
                   </p>
 
-                  <p className="text-cyan text-2xl font-bold mb-6">
+                  <p className="text-cyan text-xl sm:text-2xl font-bold mb-5 sm:mb-6">
                     {passagem.valorReais.toLocaleString('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
                     })}
                   </p>
 
-                  <p className="text-secondary font-bold text-sm mb-6">
+                  <p className="text-secondary font-bold text-xs sm:text-sm mb-5 sm:mb-6">
                     {passagem.custoUnitario.toLocaleString('pt-BR')} pts / viagem
                   </p>
 
-                  <div className="flex flex-col items-center gap-2 mb-6">
+                  <div className="flex flex-col items-center gap-2 mb-5 sm:mb-6">
                     <label
                       htmlFor={`qtd-${passagem.id}`}
                       className="text-sm font-medium text-gray-500"
@@ -573,21 +569,21 @@ export default function Conversao() {
                               e.target.value
                             )
                           }
-                          className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-cyan outline-none"
+                          className="w-24 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold focus:border-cyan outline-none"
                         />
                       )}
                     />
                   </div>
 
-                  <p className="font-bold text-dark mb-2">
+                  <p className="font-bold text-dark mb-2 text-sm sm:text-base">
                     Total:{' '}
-                    <span className="text-cyan text-xl">
+                    <span className="text-cyan text-lg sm:text-xl">
                       {total.toLocaleString('pt-BR')}
                     </span>{' '}
                     pts
                   </p>
 
-                  <p className="text-gray-500 text-sm mb-6">
+                  <p className="text-gray-500 text-sm mb-5 sm:mb-6">
                     Total:{' '}
                     <span className="font-bold text-cyan">
                       {totalReais.toLocaleString('pt-BR', {
@@ -611,25 +607,25 @@ export default function Conversao() {
         </section>
       </section>
 
-      {/* HISTÓRICO DE GERAÇÃO */}
-      <section className="bg-white rounded-3xl p-6 sm:p-10 shadow-md mt-12 mb-10">
-        <h2 className="text-2xl font-bold text-dark mb-2">
+      {/* Histórico de geração */}
+      <section className="min-w-0 bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-10 shadow-md mt-8 sm:mt-12 mb-8 sm:mb-10">
+        <h2 className="text-xl sm:text-2xl font-bold text-dark mb-2">
           Histórico de Geração
         </h2>
 
-        <p className="text-gray-500 mb-6">
+        <p className="text-sm sm:text-base text-gray-500 mb-5 sm:mb-6">
           Confira o histórico dos seus MovePoints convertidos.
         </p>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm text-left">
             <thead className="bg-gray-50 text-gray-600 border-b-2 border-gray-100">
               <tr>
-                <th className="py-4 px-4 font-semibold">Data</th>
-                <th className="py-4 px-4 font-semibold">Transporte</th>
-                <th className="py-4 px-4 font-semibold">Quantidade</th>
-                <th className="py-4 px-4 font-semibold">Pontos</th>
-                <th className="py-4 px-4 font-semibold">Status</th>
+                <th className="py-4 px-3 sm:px-4 font-semibold">Data</th>
+                <th className="py-4 px-3 sm:px-4 font-semibold">Transporte</th>
+                <th className="py-4 px-3 sm:px-4 font-semibold">Quantidade</th>
+                <th className="py-4 px-3 sm:px-4 font-semibold">Pontos</th>
+                <th className="py-4 px-3 sm:px-4 font-semibold">Status</th>
               </tr>
             </thead>
 
@@ -638,7 +634,7 @@ export default function Conversao() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="py-8 text-center text-gray-400"
+                    className="py-8 px-3 text-center text-gray-400"
                   >
                     Nenhuma conversão foi gerada ainda.
                   </td>
@@ -649,21 +645,23 @@ export default function Conversao() {
                     key={item.id}
                     className="border-b border-gray-50 bg-[#e6fcf5] transition-colors"
                   >
-                    <td className="py-4 px-4">{item.data}</td>
+                    <td className="py-4 px-3 sm:px-4 whitespace-nowrap">
+                      {item.data}
+                    </td>
 
-                    <td className="py-4 px-4 font-bold">
+                    <td className="py-4 px-3 sm:px-4 font-bold">
                       {item.transporte}
                     </td>
 
-                    <td className="py-4 px-4 font-bold text-purple">
+                    <td className="py-4 px-3 sm:px-4 font-bold text-purple whitespace-nowrap">
                       {item.quantidade}
                     </td>
 
-                    <td className="py-4 px-4 font-bold text-danger">
+                    <td className="py-4 px-3 sm:px-4 font-bold text-danger whitespace-nowrap">
                       -{item.pontos.toLocaleString('pt-BR')} pts
                     </td>
 
-                    <td className="py-4 px-4 font-bold text-green">
+                    <td className="py-4 px-3 sm:px-4 font-bold text-green whitespace-nowrap">
                       ✓ Gerado
                     </td>
                   </tr>
@@ -674,16 +672,18 @@ export default function Conversao() {
         </div>
       </section>
 
-      {/* SUA MOBILIDADE É NOSSA PRIORIDADE */}
-      <section className="bg-gradient-to-r from-dark to-[#2a2f7e] rounded-2xl p-6 sm:p-8 flex items-center gap-6 shadow-lg">
-        <span className="text-4xl shrink-0">🛡️</span>
+      {/* Sua mobilidade é nossa prioridade */}
+      <section className="bg-gradient-to-r from-dark to-[#2a2f7e] rounded-2xl p-5 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 shadow-lg">
+        <span className="text-3xl sm:text-4xl shrink-0" aria-hidden="true">
+          🛡️
+        </span>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h2 className="text-lg sm:text-xl font-bold text-white mb-1">
             Sua mobilidade é nossa prioridade
           </h2>
 
-          <p className="text-white/70 text-sm sm:text-base">
+          <p className="text-white/70 text-sm sm:text-base leading-relaxed">
             Segurança, sustentabilidade e praticidade.
           </p>
         </div>
@@ -693,6 +693,7 @@ export default function Conversao() {
           viewBox="0 0 20 20"
           fill="currentColor"
           className="w-6 h-6 text-white/60 shrink-0 hidden sm:block"
+          aria-hidden="true"
         >
           <path
             fillRule="evenodd"
@@ -701,7 +702,6 @@ export default function Conversao() {
           />
         </svg>
       </section>
-
     </main>
   );
 }

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
@@ -266,7 +267,6 @@ export default function Home() {
     document.title = 'MoveUP - Mobilidade Sustentável';
   }, []);
 
-  // Salva as missões por conta.
   useEffect(() => {
     localStorage.setItem(
       chavePorConta(CHAVE_MISSOES),
@@ -274,7 +274,6 @@ export default function Home() {
     );
   }, [missoesSemana]);
 
-  // Salva as atividades por conta.
   useEffect(() => {
     localStorage.setItem(
       chavePorConta(CHAVE_ATIVIDADES),
@@ -282,7 +281,6 @@ export default function Home() {
     );
   }, [atividades]);
 
-  // Atualiza os indicadores com base nos registros salvos.
   const atualizarIndicadoresMobilidade = (
     registros: RegistroMobilidade[]
   ) => {
@@ -327,7 +325,6 @@ export default function Home() {
       caminhada: '🚶 Caminhada',
     };
 
-    // O cálculo de CO₂ é aplicado somente ao transporte público.
     const co2Evitado =
       tipoTransporte === 'onibus' || tipoTransporte === 'metro'
         ? calcularCo2Evitado(km)
@@ -351,7 +348,6 @@ export default function Home() {
       co2Evitado,
     };
 
-    // Salva o registro de mobilidade na conta atual.
     const registrosAtuais = carregarRegistrosMobilidade();
     const novosRegistros = [...registrosAtuais, novoRegistro];
 
@@ -386,11 +382,9 @@ export default function Home() {
     const pontosGanhos = pontosMap[id] || 200;
     const novosPontos = movePoints + pontosGanhos;
 
-    // Atualiza e salva os MovePoints da conta atual.
     setMovePoints(novosPontos);
     salvarMovePoints(novosPontos);
 
-    // Atualiza e salva o status da missão.
     const novasMissoes = missoesSemana.map((m) =>
       m.id === id
         ? {
@@ -407,7 +401,6 @@ export default function Home() {
       JSON.stringify(novasMissoes)
     );
 
-    // Registra a recompensa no histórico de atividades.
     const hoje = new Date().toLocaleDateString('pt-BR');
 
     const novaAtividade: Atividade = {
@@ -448,34 +441,35 @@ export default function Home() {
   ];
 
   return (
-    <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-6">
-      <section className="bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 sm:p-8 text-white mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+    <main className="w-full max-w-[1200px] mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-6">
+      {/* Boas-vindas */}
+      <section className="min-w-0 bg-gradient-to-r from-primary to-secondary rounded-2xl p-5 sm:p-8 text-white mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2 break-words">
           Olá, {nomeUsuario}!
         </h1>
 
-        <p className="text-white/80">
+        <p className="text-sm sm:text-base text-white/80 leading-relaxed">
           Seu impacto positivo em mobilidade sustentável hoje está ajudando a
           construir o amanhã.
         </p>
       </section>
 
       {/* Indicadores */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {metricas.map((metrica) => (
           <div
             key={metrica.titulo}
-            className={`bg-gradient-to-r ${metrica.cor} rounded-2xl p-6 text-white shadow-lg`}
+            className={`min-w-0 bg-gradient-to-r ${metrica.cor} rounded-2xl p-5 sm:p-6 text-white shadow-lg`}
           >
             <h2 className="text-center font-semibold text-base sm:text-lg mb-2">
               {metrica.titulo}
             </h2>
 
-            <p className="text-center text-3xl sm:text-4xl font-extrabold">
+            <p className="text-center text-3xl sm:text-4xl font-extrabold break-words">
               {metrica.valor}
             </p>
 
-            <p className="text-center text-sm text-white/80 mt-1">
+            <p className="text-center text-xs sm:text-sm text-white/80 mt-1">
               {metrica.label}
             </p>
           </div>
@@ -483,19 +477,19 @@ export default function Home() {
       </section>
 
       {/* Registro de atividades */}
-      <section className="bg-white rounded-2xl p-6 shadow-sm mb-8">
-        <h2 className="text-xl font-bold text-dark mb-2">
+      <section className="min-w-0 bg-white rounded-2xl p-4 sm:p-6 shadow-sm mb-6 sm:mb-8">
+        <h2 className="text-lg sm:text-xl font-bold text-dark mb-2">
           Registrar atividade 🚲
         </h2>
 
-        <p className="text-sm text-gray-500 mb-5">
+        <p className="text-sm text-gray-500 mb-5 leading-relaxed">
           Informe seu deslocamento para atualizar sua distância sustentável
           e seu impacto ambiental.
         </p>
 
         <form onSubmit={registrarAtividade}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="min-w-0">
               <label
                 htmlFor="tipoTransporte"
                 className="block text-sm font-semibold text-dark mb-2"
@@ -509,7 +503,7 @@ export default function Home() {
                 onChange={(e) =>
                   setTipoTransporte(e.target.value as TipoTransporte)
                 }
-                className="w-full border border-gray-300 rounded-xl px-3 py-3 outline-none focus:border-primary"
+                className="w-full min-w-0 border border-gray-300 rounded-xl px-3 py-3 outline-none focus:border-primary"
               >
                 <option value="onibus">Ônibus</option>
                 <option value="metro">Metrô</option>
@@ -518,7 +512,7 @@ export default function Home() {
               </select>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label
                 htmlFor="distancia"
                 className="block text-sm font-semibold text-dark mb-2"
@@ -535,11 +529,11 @@ export default function Home() {
                 value={distanciaRegistrada}
                 onChange={(e) => setDistanciaRegistrada(e.target.value)}
                 placeholder="Ex.: 5,2"
-                className="w-full border border-gray-300 rounded-xl px-3 py-3 outline-none focus:border-primary"
+                className="w-full min-w-0 border border-gray-300 rounded-xl px-3 py-3 outline-none focus:border-primary"
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label
                 htmlFor="dataAtividade"
                 className="block text-sm font-semibold text-dark mb-2"
@@ -554,7 +548,7 @@ export default function Home() {
                 max={new Date().toLocaleDateString('en-CA')}
                 value={dataAtividade}
                 onChange={(e) => setDataAtividade(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3 py-3 outline-none focus:border-primary"
+                className="w-full min-w-0 border border-gray-300 rounded-xl px-3 py-3 outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -567,16 +561,17 @@ export default function Home() {
           </button>
         </form>
 
-        <p className="text-xs text-gray-400 mt-4">
+        <p className="text-xs text-gray-400 mt-4 leading-relaxed">
           O cálculo de CO₂ utiliza a diferença entre as emissões do carro
           (0,21 kg/km) e do transporte público (0,05 kg/km).
         </p>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Desafios e atividades */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-8">
         {/* Desafios da semana */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-dark mb-5">
+        <div className="min-w-0 bg-white rounded-2xl p-4 sm:p-6 shadow-sm">
+          <h2 className="text-lg sm:text-xl font-bold text-dark mb-5">
             Desafios da Semana 🎯
           </h2>
 
@@ -584,12 +579,12 @@ export default function Home() {
             {missoesSemana.map((missao) => (
               <div
                 key={missao.id}
-                className={`rounded-xl p-4 flex items-center gap-4 ${
+                className={`min-w-0 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 ${
                   missao.concluida ? 'bg-green-50' : 'bg-gray-50'
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center flex-shrink-0 ${
                     missao.concluida
                       ? 'bg-green-100 text-green-500'
                       : 'bg-yellow-100 text-yellow-500'
@@ -598,12 +593,12 @@ export default function Home() {
                   {missao.concluida ? '✓' : '⌛'}
                 </div>
 
-                <div className="flex-1">
-                  <h3 className="font-semibold text-dark">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-dark break-words">
                     {missao.titulo}
                   </h3>
 
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">
                     {missao.descricao}
                   </p>
                 </div>
@@ -612,7 +607,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => concluirMissao(missao.id, Date.now())}
-                    className="bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-lg font-semibold text-sm hover:opacity-90 transition"
+                    className="w-full sm:w-auto sm:flex-shrink-0 bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-lg font-semibold text-sm hover:opacity-90 transition"
                   >
                     Concluir
                   </button>
@@ -630,18 +625,18 @@ export default function Home() {
         </div>
 
         {/* Atividades recentes */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-dark mb-5">
+        <div className="min-w-0 bg-white rounded-2xl p-4 sm:p-6 shadow-sm">
+          <h2 className="text-lg sm:text-xl font-bold text-dark mb-5">
             Atividades Recentes 🕒
           </h2>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[480px]">
               <thead>
                 <tr className="text-left text-sm text-gray-500 border-b">
-                  <th className="pb-3 font-medium">Data</th>
-                  <th className="pb-3 font-medium">Tipo</th>
-                  <th className="pb-3 font-medium">Distância</th>
+                  <th className="pb-3 pr-3 font-medium">Data</th>
+                  <th className="pb-3 pr-3 font-medium">Tipo</th>
+                  <th className="pb-3 pr-3 font-medium">Distância</th>
                   <th className="pb-3 font-medium">Pontos</th>
                 </tr>
               </thead>
@@ -652,21 +647,21 @@ export default function Home() {
                     key={atividade.id}
                     className="border-b last:border-b-0"
                   >
-                    <td className="py-4 text-sm text-dark">
+                    <td className="py-4 pr-3 text-sm text-dark whitespace-nowrap">
                       {atividade.data}
                     </td>
 
-                    <td className="py-4 text-sm text-dark">
+                    <td className="py-4 pr-3 text-sm text-dark whitespace-nowrap">
                       {atividade.tipo}
                     </td>
 
-                    <td className="py-4 text-sm text-dark">
+                    <td className="py-4 pr-3 text-sm text-dark whitespace-nowrap">
                       {atividade.distancia > 0
                         ? `${atividade.distancia.toFixed(2)} km`
                         : '—'}
                     </td>
 
-                    <td className="py-4 text-sm font-semibold text-green-500">
+                    <td className="py-4 text-sm font-semibold text-green-500 whitespace-nowrap">
                       {atividade.pontos}
                     </td>
                   </tr>
