@@ -1,5 +1,7 @@
-
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/+$/, '');
+const API_URL = (
+  import.meta.env.VITE_API_URL ||
+  'https://moveup-89cd.onrender.com/moveup'
+).replace(/\/+$/, '');
 
 export async function apiRequest<T>(
   endpoint: string,
